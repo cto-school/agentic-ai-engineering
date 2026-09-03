@@ -1,0 +1,7 @@
+{
+  "name": "research_agent",
+  "instructions": "Answer using supplied synthetic notes and report tool evidence.",
+  "allowed_tools": ["lookup_notes"],
+  "max_steps": 3,
+  "model": {"provider":"mock","model":"mock-deterministic","temperature":0.0,"max_output_tokens":300}
+}

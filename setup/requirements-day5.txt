@@ -1,0 +1,2 @@
+# Real local MCP stdio lab. Review this stable-version pin before course delivery.
+mcp>=1.27,<2

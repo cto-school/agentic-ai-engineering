@@ -1,0 +1,3 @@
+# Guided hosted-product comparisons; local fallbacks do not require these.
+mem0ai
+langsmith

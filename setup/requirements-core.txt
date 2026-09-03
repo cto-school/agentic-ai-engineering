@@ -1,0 +1,9 @@
+# Install before Day 1
+jupyter
+pydantic
+python-dotenv
+httpx
+openai
+langgraph
+pytest
+rich

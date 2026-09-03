@@ -1,0 +1,22 @@
+# Versions will be pinned after all five projects pass environment validation.
+jupyter
+pydantic
+python-dotenv
+httpx
+openai
+ollama
+langgraph
+chromadb
+sentence-transformers
+pypdf
+pytest
+rich
+
+# Later-day optional dependencies will be documented separately:
+# mem0ai
+# langsmith
+# Day 5 real stdio lab. The offline harness works without it. Keep on the documented
+# stable v1 line for this course revision; review before each delivery.
+mcp>=1.27,<2
+# fastapi
+# uvicorn

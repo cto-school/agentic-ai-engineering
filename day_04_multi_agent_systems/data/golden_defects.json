@@ -1,0 +1,11 @@
+[
+  {"id":"DEF-COR-01","category":"correctness","line":7,"title":"Negative quantities are accepted","severity":"high"},
+  {"id":"DEF-COR-02","category":"correctness","line":9,"title":"Discount is a flat amount and can make total negative","severity":"medium"},
+  {"id":"DEF-COR-03","category":"correctness","line":25,"title":"Empty input causes division by zero","severity":"medium"},
+  {"id":"DEF-SEC-01","category":"security","line":3,"title":"Credential-like token is hardcoded","severity":"high"},
+  {"id":"DEF-SEC-02","category":"security","line":15,"title":"SQL query is built by string concatenation","severity":"critical"},
+  {"id":"DEF-SEC-03","category":"security","line":20,"title":"Untrusted expression may reach eval","severity":"critical"},
+  {"id":"DEF-SEC-04","category":"security","line":31,"title":"Sensitive token is written to logs","severity":"high"},
+  {"id":"DEF-MNT-01","category":"maintainability","line":6,"title":"Mutable default argument retains state","severity":"medium"},
+  {"id":"DEF-MNT-02","category":"maintainability","line":26,"title":"Broad exception hides unrelated failures","severity":"medium"}
+]

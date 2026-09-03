@@ -1,0 +1,82 @@
+[
+  {
+    "id": "q01",
+    "question": "Which loads stay powered when the campus microgrid is islanded?",
+    "answerable": true,
+    "expected_source": "solar_microgrid.md",
+    "expected_section": "Load priorities",
+    "essential_terms": ["emergency lighting", "network equipment", "fire-alarm", "medical room refrigerator"]
+  },
+  {
+    "id": "q02",
+    "question": "What establishes voltage and frequency during islanded operation?",
+    "answerable": true,
+    "expected_source": "solar_microgrid.md",
+    "expected_section": "Operating modes",
+    "essential_terms": ["battery inverter"]
+  },
+  {
+    "id": "q03",
+    "question": "How long must synchronization remain acceptable before reconnection?",
+    "answerable": true,
+    "expected_source": "solar_microgrid.md",
+    "expected_section": "Transition conditions",
+    "essential_terms": ["five continuous minutes"]
+  },
+  {
+    "id": "q04",
+    "question": "At what temperature does charging stop with a warning?",
+    "answerable": true,
+    "expected_source": "battery_safety.md",
+    "expected_section": "Warning and shutdown",
+    "essential_terms": ["45 °C", "stops charging"]
+  },
+  {
+    "id": "q05",
+    "question": "What should occupants do if the battery cabinet is hissing?",
+    "answerable": true,
+    "expected_source": "battery_safety.md",
+    "expected_section": "Thermal event response",
+    "essential_terms": ["must not open", "isolate", "emergency"]
+  },
+  {
+    "id": "q06",
+    "question": "For how long are battery fault-event records retained?",
+    "answerable": true,
+    "expected_source": "battery_safety.md",
+    "expected_section": "Data retention",
+    "essential_terms": ["one year"]
+  },
+  {
+    "id": "q07",
+    "question": "Which role can read controller telemetry?",
+    "answerable": true,
+    "expected_source": "controller_interface.md",
+    "expected_section": "Authorization",
+    "essential_terms": ["viewer"]
+  },
+  {
+    "id": "q08",
+    "question": "Does requesting island mode immediately open the grid breaker?",
+    "answerable": true,
+    "expected_source": "controller_interface.md",
+    "expected_section": "Commands",
+    "essential_terms": ["does not immediately", "validation sequence"]
+  },
+  {
+    "id": "q09",
+    "question": "What information is recorded for each controller command attempt?",
+    "answerable": true,
+    "expected_source": "controller_interface.md",
+    "expected_section": "Audit trail",
+    "essential_terms": ["user identifier", "timestamp", "authorization", "execution status"]
+  },
+  {
+    "id": "q10",
+    "question": "What is the purchase price of the battery system?",
+    "answerable": false,
+    "expected_source": null,
+    "expected_section": null,
+    "essential_terms": []
+  }
+]

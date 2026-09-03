@@ -1,0 +1,7 @@
+{
+  "name": "task_agent",
+  "instructions": "Create drafts; require approval before simulated external actions.",
+  "allowed_tools": ["create_draft", "send_email"],
+  "max_steps": 3,
+  "model": {"provider":"mock","model":"mock-deterministic","temperature":0.0,"max_output_tokens":300}
+}

@@ -1,0 +1,4 @@
+# Install before Day 2. sentence-transformers may download a model on first use.
+chromadb
+sentence-transformers
+pypdf
