@@ -7,6 +7,8 @@
 
 All required theory is embedded in the notebooks at the point where it is used. Notebook 08 is the independent supervisor-merge implementation lab.
 
+**Classroom notebook:** [`day_04_complete.ipynb`](day_04_complete.ipynb) combines all eight sections into one Colab-ready learning path. The files under `notebooks/` remain the modular source and standalone lesson versions.
+
 Build an Engineering Design Review Team that examines a supplied Python artifact containing seeded defects. Compare a single reviewer, a deterministic analysis workflow, and specialized parallel reviewers with supervisor synthesis.
 
 ## Progression

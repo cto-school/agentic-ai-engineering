@@ -320,3 +320,5 @@ if __name__ == "__main__":
     print(f"Embedded theory into {embed_theory()} notebooks")
     print(f"Embedded {embed_live_observations()} required live-observation cells")
     print(f"Built {build_exercises()} exercise notebooks")
+    from build_master_notebooks import main as build_master_notebooks
+    build_master_notebooks()

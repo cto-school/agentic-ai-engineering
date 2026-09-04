@@ -9,6 +9,8 @@ Build a Safe Personal Task Agent that manages growing context, remembers selecte
 
 All required theory is embedded in the notebooks at the point where it is used. Notebooks 10 and 11 are independent implementation labs for compaction and policy.
 
+**Classroom notebook:** [`day_03_complete.ipynb`](day_03_complete.ipynb) combines all eleven sections into one Colab-ready learning path. The files under `notebooks/` remain the modular source and standalone lesson versions.
+
 ## Progression
 
 ```text

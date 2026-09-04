@@ -1,0 +1,321 @@
+{
+  "01_first_model_call.ipynb": {
+    "idea": "A language model is a text-processing service. Your program sends it a list of messages and receives a response; the model does not automatically remember earlier calls or know anything about your application.",
+    "example": "Think of ordering at a counter: the request must contain everything needed for this order. If you make another request later, you must include any earlier information that still matters.",
+    "steps": ["Create the client and choose a model", "Send a small, explicit message list", "Inspect the returned text and usage data"],
+    "takeaway": "A model call is one input-output operation. The surrounding Python program supplies continuity, validation, tools, and limits.",
+    "notebook": "Run the same prompt twice, inspect the response object, and notice which information is supplied by your code rather than remembered by the model."
+  },
+  "02_configuring_model_behavior.ipynb": {
+    "idea": "Model behaviour is influenced by instructions and generation settings, but it is not programmed as rigidly as an ordinary function. Good configuration makes the desired behaviour clear and keeps experiments comparable.",
+    "example": "A system instruction is like a job description; the user message is today’s task. Temperature changes how adventurous the response may be, not what the job is.",
+    "steps": ["Separate durable system instructions from user requests", "Change one setting at a time", "Compare outputs against the same task"],
+    "takeaway": "Prompts and settings steer a probabilistic component. They do not replace application checks.",
+    "notebook": "Compare controlled variations of the same request and identify what changed because of the instruction, setting, or model."
+  },
+  "03_structured_outputs.ipynb": {
+    "idea": "Free-form prose is convenient for people but awkward for programs. Structured output asks the model to return named fields that Python can parse and validate before using them.",
+    "example": "Instead of extracting a due date from a paragraph, request an object such as {task, due_date, priority}. The program can then reject a missing or invalid date.",
+    "steps": ["Define the expected fields and types", "Ask the model for that structure", "Parse and validate before continuing"],
+    "takeaway": "Structure creates a reliable boundary between uncertain model output and deterministic application code.",
+    "notebook": "Inspect a valid response and at least one malformed response, then see how validation turns silent ambiguity into a visible error."
+  },
+  "04_tool_calling.ipynb": {
+    "idea": "Tool calling does not let a model execute Python. The model only proposes a tool name and arguments; your application decides whether the request is valid, runs the function, and returns the result.",
+    "example": "If a student asks for 37 × 19, the model may request calculator(a=37, b=19). Python checks those arguments and performs the multiplication. Only then does the model receive 703.",
+    "steps": ["Describe the available tool with a schema", "Let the model propose a name and arguments", "Validate, execute, and return the observation"],
+    "takeaway": "The model requests capabilities; the host application owns execution and permission.",
+    "notebook": "Follow one calculator request from user message to tool proposal, Python execution, tool result, and final answer."
+  },
+  "05_manual_agent_loop.ipynb": {
+    "idea": "An agent is a controlled loop around a model. On each turn the model either asks for a tool or returns a final answer; the application records the result and decides whether another turn is allowed.",
+    "example": "A research assistant may search, read one result, notice missing evidence, search again, and then answer. That sequence emerges one bounded step at a time.",
+    "steps": ["Ask the model for the next action", "Execute an allowed tool and append its result", "Stop on a final answer, error, or step limit"],
+    "takeaway": "The loop—not the prompt alone—creates agentic behaviour. Python must own termination and failure handling.",
+    "notebook": "Trace the messages after every iteration and test what happens when the model never finishes or asks for an unknown tool."
+  },
+  "06_langgraph_agent.ipynb": {
+    "idea": "LangGraph represents the same agent loop as explicit state, nodes, and transitions. It becomes useful when the workflow needs branching, checkpoints, resumability, or inspection.",
+    "example": "A model node can route to a tool node when a tool is requested, or to END when an answer is ready. The shared state carries the messages between them.",
+    "steps": ["Define the state that survives between steps", "Implement model and tool nodes", "Connect them with conditional transitions"],
+    "takeaway": "A framework organizes a loop you already understand; it does not remove the need to design that loop.",
+    "notebook": "Compare the graph with the previous manual loop and map each node and edge to the corresponding Python responsibility."
+  },
+  "07_project_research_assistant.ipynb": {
+    "idea": "This project combines model calls, structured tool requests, bounded iteration, and visible evidence into a small research assistant. The aim is a dependable process, not an impressive-looking answer.",
+    "example": "Given a question, the assistant chooses from supplied research tools, records what each tool returned, and produces an answer that can be inspected.",
+    "steps": ["Accept a focused research question", "Collect evidence through bounded tool use", "Return an answer with a trace of the work"],
+    "takeaway": "A useful agent is a model embedded in a controlled application workflow.",
+    "notebook": "Run the complete path, then deliberately trigger a tool error or step limit and explain how the system responds."
+  },
+  "08_exercise_manual_agent_loop.ipynb": {
+    "idea": "This exercise checks whether you can implement the core mechanism without relying on a framework. You will complete the loop that separates model proposals from application execution.",
+    "example": "A fake model first requests add(2, 3), then returns a final response after Python appends the result to the history.",
+    "steps": ["Handle final and tool responses", "Validate and dispatch the requested tool", "Enforce the maximum number of steps"],
+    "takeaway": "If you can build this loop, later agent frameworks become readable rather than magical.",
+    "notebook": "Complete run_agent, pass the behavioural checks, and add tests for an unknown tool and a model that never stops."
+  },
+
+  "01_documents_and_chunks.ipynb": {
+    "idea": "A model cannot use private course documents unless the application places relevant text in its context. Retrieval begins by turning documents into smaller, labelled units called chunks.",
+    "example": "A 40-page handbook is too broad to insert for every question. Splitting it by headings lets the system retrieve only the attendance or laboratory-safety section.",
+    "steps": ["Load and clean the source documents", "Split at meaningful boundaries", "Attach source and section metadata to every chunk"],
+    "takeaway": "A chunk is a retrievable unit with provenance, not an arbitrary slice of characters.",
+    "notebook": "Inspect the supplied documents and verify that every generated chunk still identifies where it came from."
+  },
+  "02_keyword_search.ipynb": {
+    "idea": "Keyword search ranks chunks by matching words. It is simple, fast, and explainable, which makes it a useful baseline before adding embeddings.",
+    "example": "A question containing “protective earth” will rank a chunk containing those exact words highly, but may miss another chunk that only says “ground connection.”",
+    "steps": ["Normalize the query and chunk words", "Count or weight their overlap", "Rank chunks and inspect the scores"],
+    "takeaway": "Start with the simplest retriever that can be measured; complexity is useful only when it improves known failures.",
+    "notebook": "Find one query keyword search handles well and one meaning-based match it misses."
+  },
+  "03_embeddings_and_semantic_search.ipynb": {
+    "idea": "An embedding converts text into a vector whose position roughly represents meaning. Semantic search compares query and chunk vectors, allowing related wording to match without sharing exact terms.",
+    "example": "“How do I ground the device?” may retrieve a passage about a “protective earth connection” even though the phrases differ.",
+    "steps": ["Embed each chunk once", "Embed the incoming question", "Rank chunks by vector similarity"],
+    "takeaway": "Embeddings improve meaning-based matching, but a high similarity score is not proof that a passage answers the question.",
+    "notebook": "Compare keyword and semantic rankings for the same queries and inspect both improvements and surprising matches."
+  },
+  "04_basic_rag.ipynb": {
+    "idea": "Retrieval-augmented generation (RAG) retrieves relevant evidence and places it in the model prompt before asking for an answer. Retrieval supplies context; the model turns that context into a response.",
+    "example": "For a campus-policy question, Python retrieves three handbook chunks, labels them as evidence, and instructs the model to answer only from those passages.",
+    "steps": ["Retrieve a small set of relevant chunks", "Assemble a labelled context within a budget", "Generate an answer grounded in that context"],
+    "takeaway": "RAG is an application pipeline, not a special kind of model.",
+    "notebook": "Trace the question, retrieved chunks, assembled prompt, and answer as four distinct objects."
+  },
+  "05_citations_and_abstention.ipynb": {
+    "idea": "A grounded assistant should show which evidence supports its claims and decline when the available evidence is insufficient. Citations aid inspection; abstention prevents confident guessing.",
+    "example": "If the retrieved handbook explains lab timings but says nothing about hostel fees, the assistant should cite the timings section and refuse to invent a fee amount.",
+    "steps": ["Give every chunk a stable source label", "Require claims to reference those labels", "Return ‘insufficient evidence’ when support is missing"],
+    "takeaway": "A citation is useful only when it points to evidence that actually supports the statement.",
+    "notebook": "Test one answerable and one unanswerable question, then verify every citation against the retrieved text."
+  },
+  "06_retrieval_evaluation.ipynb": {
+    "idea": "A bad RAG answer can fail because retrieval selected the wrong evidence or because generation misused good evidence. Evaluate these stages separately so you fix the correct component.",
+    "example": "If the correct policy chunk never appears in the top results, rewriting the answer prompt cannot solve the retrieval failure.",
+    "steps": ["Create questions with known relevant chunks", "Measure whether retrieval finds them", "Evaluate answer quality only after evidence quality"],
+    "takeaway": "Separating retrieval metrics from answer metrics makes RAG debugging actionable.",
+    "notebook": "Use the small golden set to locate a retrieval failure and explain whether chunking, ranking, or generation should change."
+  },
+  "07_retrieval_tool_and_state.ipynb": {
+    "idea": "Retrieval can be exposed as a tool, allowing an agent to search only when needed. The application should keep queries, results, and citations in visible state so the process remains inspectable.",
+    "example": "The agent may first search for laboratory access rules, inspect weak results, then issue a narrower query before answering.",
+    "steps": ["Define a retrieval tool with a narrow schema", "Record each query and returned chunk", "Treat retrieved text as untrusted evidence, not instructions"],
+    "takeaway": "Agentic RAG adds decision-making around retrieval, along with new state and prompt-injection risks.",
+    "notebook": "Follow two retrieval attempts and identify how the application distinguishes document content from trusted system instructions."
+  },
+  "08_project_knowledge_assistant.ipynb": {
+    "idea": "This project builds an engineering knowledge assistant that searches supplied documents, answers from evidence, cites sources, and abstains when necessary.",
+    "example": "A user asks a maintenance question; the assistant retrieves manual sections, returns a concise procedure, and shows the exact source labels used.",
+    "steps": ["Prepare searchable, labelled chunks", "Retrieve and assemble bounded evidence", "Answer with citations or abstain"],
+    "takeaway": "A trustworthy knowledge assistant exposes its evidence path instead of relying on the model’s general memory.",
+    "notebook": "Run the project against both supported and unsupported questions and inspect the complete retrieval trace."
+  },
+  "09_exercise_rag_context.ipynb": {
+    "idea": "Retrieved chunks do not automatically become good model context. Your program must select, order, label, and limit them before generation.",
+    "example": "With a 90-character budget, the assembler includes complete high-ranked evidence blocks and skips a block that would be cut halfway.",
+    "steps": ["Preserve retrieval order", "Add clear source labels", "Include only complete chunks that fit the budget"],
+    "takeaway": "Context assembly is a deliberate engineering boundary between retrieval and generation.",
+    "notebook": "Implement build_context, pass the checks, and prove that no included chunk is truncated."
+  },
+
+  "01_conversation_history.ipynb": {
+    "idea": "Models are stateless between API calls. A conversation appears continuous only because the application resends selected earlier messages with each new request.",
+    "example": "When a user says “use the same unit,” the model understands only if the earlier unit preference is included again or stored elsewhere.",
+    "steps": ["Store messages in application state", "Select the history needed for the next call", "Distinguish conversation history from durable user memory"],
+    "takeaway": "History is context managed by the application, not memory living inside the model.",
+    "notebook": "Inspect exactly what is sent on the second turn and remove an earlier message to see what the model can no longer infer."
+  },
+  "02_context_compaction.ipynb": {
+    "idea": "Conversation history eventually exceeds useful context and cost limits. Compaction replaces older details with a smaller summary while retaining recent messages and important state.",
+    "example": "Ten planning turns may become one summary of decisions plus the two latest messages, reducing size while preserving the current task.",
+    "steps": ["Choose what must be preserved verbatim", "Summarize older resolved information", "Keep recent and safety-critical state separately"],
+    "takeaway": "Compaction is lossy; its preservation rules must be explicit and tested.",
+    "notebook": "Compare full and compacted histories and list any fact, approval, or unresolved action that must not disappear."
+  },
+  "03_custom_persistent_memory.ipynb": {
+    "idea": "Persistent memory stores selected information across sessions. A transparent implementation makes it clear what is written, retrieved, updated, and deleted.",
+    "example": "The agent may remember a preferred measurement unit, but should not save every casual sentence or an unverified inference about the user.",
+    "steps": ["Extract a candidate memory", "Validate and store it with provenance", "Retrieve only memories relevant to the current task"],
+    "takeaway": "Useful memory is selective, editable, and separate from raw conversation history.",
+    "notebook": "Create, retrieve, update, and delete a synthetic preference while inspecting the underlying store."
+  },
+  "04_mem0_platform.ipynb": {
+    "idea": "Mem0 is a managed memory system that automates extraction, storage, and retrieval. Comparing it with a small custom store reveals what a platform provides and what control it hides.",
+    "example": "Instead of writing storage and relevance logic yourself, you submit messages and the platform identifies candidate memories for a user.",
+    "steps": ["Observe the managed memory workflow", "Compare its records with the transparent local store", "Identify privacy, cost, and control trade-offs"],
+    "takeaway": "A memory platform is infrastructure around model calls; it does not decide your product’s memory policy for you.",
+    "notebook": "Use the optional platform path if available, otherwise study the captured result and compare both designs."
+  },
+  "05_small_plans.ipynb": {
+    "idea": "A plan is a model-generated proposal for future steps. Keeping plans short, structured, and visible makes them easier to inspect and revise before execution.",
+    "example": "For arranging a meeting, the agent may propose: check availability, draft options, request approval, then send—without performing those actions yet.",
+    "steps": ["Ask for a bounded structured plan", "Validate allowed step types and limits", "Execute one approved step at a time"],
+    "takeaway": "Planning helps organize work, but a plan is neither permission nor proof that a step succeeded.",
+    "notebook": "Inspect a plan containing an unsafe or unsupported step and see where application validation rejects it."
+  },
+  "06_tools_with_side_effects.ipynb": {
+    "idea": "Some tools only read information; others change the outside world. Sending a message, modifying a file, or creating a booking requires stronger controls than search.",
+    "example": "Searching a calendar is reversible and read-only. Sending invitations affects other people and should require a preview, approval, and a record of the exact action.",
+    "steps": ["Label each tool by capability and side effect", "Prepare an exact action before execution", "Apply approval and idempotency checks"],
+    "takeaway": "Risk follows the real effect of a tool, not how harmless its name sounds.",
+    "notebook": "Compare read-only and side-effecting tools and trace the safeguards that run before each handler."
+  },
+  "07_permissions_and_approval.ipynb": {
+    "idea": "Guardrails are controls around what enters the system, what the model may propose, and what the application may execute. Human approval is one important guardrail for consequential actions.",
+    "example": "Approve ‘send this exact draft to these two addresses,’ not the vague instruction ‘send it.’ If the content or recipients change, the approval no longer applies.",
+    "steps": ["Check whether the capability is allowed", "Show the exact proposed action to the user", "Execute only a matching approved action ID"],
+    "takeaway": "The model can propose an action; policy and the user authorize it.",
+    "notebook": "Try modifying an action after approval and verify that the policy blocks execution."
+  },
+  "08_observability_and_safety_evaluation.ipynb": {
+    "idea": "Observability records what the system did; evaluation judges whether that behaviour was good. Together they turn failures into evidence that can be diagnosed and improved.",
+    "example": "A trace shows the prompt, tool request, policy decision, latency, and result. A safety test then checks whether an unapproved email was correctly blocked.",
+    "steps": ["Emit structured events at important boundaries", "Inspect traces in local logs or LangSmith", "Run repeatable safety and quality cases"],
+    "takeaway": "Logs explain a run; evaluations compare behaviour against expectations across many runs.",
+    "notebook": "Follow one action through its trace and connect every safety assertion to the event that proves it."
+  },
+  "09_project_safe_task_agent.ipynb": {
+    "idea": "This project combines history, persistent preferences, planning, tools, guardrails, approval, and traces in a personal task agent.",
+    "example": "The agent remembers a harmless preference, proposes a task action, shows a preview, waits for approval, and records whether execution occurred.",
+    "steps": ["Build context from history and relevant memory", "Generate and validate a small plan", "Gate side effects and log every decision"],
+    "takeaway": "Safety is a sequence of enforceable application boundaries, not a warning placed in the prompt.",
+    "notebook": "Run one permitted and one blocked scenario and explain the state transition at the approval boundary."
+  },
+  "10_exercise_history_compaction.ipynb": {
+    "idea": "This exercise asks you to reduce conversation size without silently losing important information. The function must preserve recent messages and summarize selected older facts and tool outcomes.",
+    "example": "An old unit preference and completed calculation move into a system summary while the latest user exchange remains verbatim.",
+    "steps": ["Avoid changing the original list", "Summarize eligible older messages", "Retain the required number of recent messages"],
+    "takeaway": "Memory management is a testable data transformation, not simply ‘ask the model to remember.’",
+    "notebook": "Complete compact_history and add a case involving an unresolved approval request."
+  },
+  "11_exercise_action_policy.ipynb": {
+    "idea": "This exercise implements the rule that proposals are not permissions. A deterministic policy decides whether a structured action may reach its handler.",
+    "example": "Search runs without approval, but send_email runs only when its exact action ID appears in the approved set.",
+    "steps": ["Reject unknown tools", "Allow declared read-only capabilities", "Require exact approval for side effects"],
+    "takeaway": "Critical authorization belongs in deterministic code outside the model.",
+    "notebook": "Implement evaluate_action and prove that approval for one action cannot authorize another."
+  },
+
+  "01_seeded_artifact_and_golden_set.ipynb": {
+    "idea": "Before adding multiple agents, define a task whose quality can be measured. A seeded artifact contains known issues, and a golden set records which findings a good review should recover.",
+    "example": "A design document deliberately contains three known problems. Review systems are compared by which problems they find, miss, or invent.",
+    "steps": ["Create a stable review artifact", "Record expected findings independently", "Define scoring before comparing architectures"],
+    "takeaway": "Without a measurable baseline, extra agents can look sophisticated without being better.",
+    "notebook": "Inspect the artifact and golden set before running any reviewer, then identify what counts as a true and false finding."
+  },
+  "02_single_reviewer_baseline.ipynb": {
+    "idea": "A single model reviewer is the simplest solution to the review task. It establishes quality, cost, and latency numbers that a multi-agent design must justify improving.",
+    "example": "One reviewer reads the entire design and returns structured findings with severity, evidence, and recommendations.",
+    "steps": ["Give one reviewer the complete task", "Validate its structured findings", "Score results against the golden set"],
+    "takeaway": "Multi-agent complexity is warranted only when it beats a well-designed single-agent baseline on a meaningful objective.",
+    "notebook": "Record what the single reviewer finds, misses, costs, and how long it takes."
+  },
+  "03_deterministic_checks.ipynb": {
+    "idea": "Some review rules are exact enough for ordinary code. Deterministic checks are faster, cheaper, and repeatable, leaving model judgment for ambiguous issues.",
+    "example": "Python can reliably detect a missing required section or value outside an allowed range; an LLM is better reserved for unclear reasoning or conflicting requirements.",
+    "steps": ["Separate exact rules from judgment calls", "Implement exact rules as functions", "Merge their evidence with model findings"],
+    "takeaway": "Use models where interpretation is needed, not where a simple rule is stronger.",
+    "notebook": "Compare deterministic findings with the reviewer output and identify duplicated or complementary work."
+  },
+  "04_parallel_specialist_reviewers.ipynb": {
+    "idea": "Specialist agents divide a broad review into narrow perspectives. They may run independently, but parallelism adds cost, latency coordination, and duplicate findings.",
+    "example": "A safety reviewer checks hazards while a requirements reviewer checks completeness. Both inspect the same artifact through different instructions.",
+    "steps": ["Give each specialist a distinct responsibility", "Run the same contracts sequentially first", "Parallelize only independent work and tolerate failures"],
+    "takeaway": "Multiple agents are useful when decomposition creates genuinely different expertise or context—not merely more model calls.",
+    "notebook": "Inspect each specialist’s scope and measure overlap before and after parallel execution."
+  },
+  "05_supervisor_synthesis.ipynb": {
+    "idea": "A supervisor combines specialist outputs into one coherent result. It must handle duplicates, conflicts, missing reviewers, and provenance without hiding disagreement.",
+    "example": "Two specialists may describe the same grounding defect with different wording. The supervisor merges it once while retaining both evidence references.",
+    "steps": ["Normalize and validate specialist results", "Deduplicate and resolve conflicts", "Produce a ranked report with provenance"],
+    "takeaway": "Coordination is a data-merging problem as much as a prompting problem.",
+    "notebook": "Trace a finding from each specialist into the final report and verify that failures remain visible."
+  },
+  "06_comparative_evaluation.ipynb": {
+    "idea": "Architecture decisions should compare quality, cost, latency, and failure behaviour under the same test set. An LLM judge can assist with nuanced scoring, but deterministic checks and human inspection remain anchors.",
+    "example": "Compare one reviewer with three specialists: the team may find one additional issue but cost three times as much and introduce duplicates.",
+    "steps": ["Run each architecture on identical cases", "Use deterministic metrics and a bounded judge rubric", "Choose based on measured trade-offs"],
+    "takeaway": "An LLM judge supplies another probabilistic opinion; a council supplies several. Neither is automatic ground truth.",
+    "notebook": "Read the comparison table and decide whether the multi-agent gain is worth its added cost and complexity."
+  },
+  "07_project_engineering_review_team.ipynb": {
+    "idea": "This project assembles deterministic checks, specialist reviewers, and supervisor synthesis into an engineering design review team with measurable output.",
+    "example": "The system reviews one design artifact, gathers findings from focused reviewers, merges overlaps, and produces a report linked to evidence.",
+    "steps": ["Run exact checks and specialist reviews", "Collect structured results even when one fails", "Synthesize, score, and compare with the baseline"],
+    "takeaway": "A multi-agent system is an explicit coordination architecture, not a group chat between personas.",
+    "notebook": "Run the complete review and explain which parts truly needed models, multiple specialists, or only Python."
+  },
+  "08_exercise_supervisor_merge.ipynb": {
+    "idea": "This exercise isolates the supervisor’s deterministic merge responsibility. It must accept partial failure, remove repeated IDs, and produce a stable priority order.",
+    "example": "If one reviewer times out and two others return F1, the result still contains one F1 plus their other successful findings.",
+    "steps": ["Ignore failed result envelopes", "Keep one finding per stable ID", "Sort by severity and then ID"],
+    "takeaway": "Reliable multi-agent coordination requires ordinary defensive programming around uncertain workers.",
+    "notebook": "Complete merge_findings, then explore why matching IDs alone cannot detect every semantic duplicate."
+  },
+
+  "01_what_is_a_harness.ipynb": {
+    "idea": "An AI harness is the reusable runtime around agents. It standardizes how models, tools, permissions, state, logs, limits, and configuration work so every project does not rebuild them differently.",
+    "example": "Instead of each agent inventing its own retry and tool code, both a research agent and maintenance agent run through the same controlled runtime.",
+    "steps": ["Identify responsibilities repeated across earlier projects", "Separate reusable runtime from agent-specific configuration", "Define common execution and event contracts"],
+    "takeaway": "The harness is infrastructure for running agents consistently; it is not another agent.",
+    "notebook": "Map each harness component back to a problem encountered during Days 1–4."
+  },
+  "02_model_configuration_and_runtime.ipynb": {
+    "idea": "Configuration describes what an agent may use and how it should behave; the runtime executes that description. Keeping them separate makes agent variants easier to inspect, test, and change.",
+    "example": "A configuration selects a model, system instruction, tool capabilities, and step budget. The same runner can execute several such configurations.",
+    "steps": ["Represent model and agent choices as validated data", "Pass configuration into a shared runner", "Keep secrets and live clients outside configuration files"],
+    "takeaway": "Configuration should express policy and choices, while runtime code enforces them.",
+    "notebook": "Create two agent configurations and identify what changes without modifying the runner."
+  },
+  "03_tool_registry.ipynb": {
+    "idea": "A tool registry is the controlled catalogue connecting model-visible tool descriptions to application-owned Python handlers. It centralizes discovery, validation, and dispatch.",
+    "example": "The registry exposes the schema for search only to an agent granted search capability, then calls the corresponding handler when a valid request arrives.",
+    "steps": ["Register schema, handler, and capability together", "Reveal only tools allowed by configuration", "Validate again at dispatch time"],
+    "takeaway": "Showing a tool schema and permitting execution are separate security decisions; enforce both.",
+    "notebook": "Register tools, filter their visible schemas, and attempt an ungranted dispatch."
+  },
+  "04_permissions_and_limits.ipynb": {
+    "idea": "A harness applies permissions and resource limits consistently before and during execution. Limits bound damage, cost, and runaway behaviour even when prompts fail.",
+    "example": "An agent may have search permission, no email permission, a five-step limit, and a fixed token or cost budget.",
+    "steps": ["Grant the smallest required capabilities", "Check approval for consequential actions", "Enforce step, time, and budget limits in code"],
+    "takeaway": "Permissions decide what may happen; limits decide how much may happen.",
+    "notebook": "Trigger each boundary deliberately and inspect the specific reason the run stops."
+  },
+  "05_events_logs_and_checkpoints.ipynb": {
+    "idea": "Events record meaningful changes during a run, while checkpoints save enough state to resume or inspect it later. Together they make long workflows observable and recoverable.",
+    "example": "A run emits model_started, tool_requested, policy_denied, and run_finished events; a checkpoint preserves messages and remaining budget after a completed step.",
+    "steps": ["Emit structured events with run and step IDs", "Save state only at safe boundaries", "Use traces for debugging, evaluation, and cost attribution"],
+    "takeaway": "Observability should explain what happened without relying on scattered print statements.",
+    "notebook": "Reconstruct one run from its event sequence and inspect what a checkpoint can—and cannot—safely resume."
+  },
+  "06_mcp_client.ipynb": {
+    "idea": "Model Context Protocol (MCP) standardizes how applications discover and call external tools or resources. It improves interoperability, but the harness must still apply trust and permission rules.",
+    "example": "An MCP server advertises a documentation-search tool. The client discovers its schema, but policy decides whether this agent may see or invoke it.",
+    "steps": ["Connect and discover server capabilities", "Translate them into controlled registry entries", "Apply validation, permissions, and logging on every call"],
+    "takeaway": "MCP is a communication protocol, not a security boundary or automatic authorization.",
+    "notebook": "Follow discovery and invocation separately, then identify every check that still belongs to the host application."
+  },
+  "07_project_mini_harness.ipynb": {
+    "idea": "The mini harness consolidates the course’s recurring mechanisms into one small runtime: configuration, bounded model loops, governed tools, events, checkpoints, and evaluation hooks.",
+    "example": "Different agents can supply different instructions and tool grants while sharing the same execution, policy, and trace machinery.",
+    "steps": ["Load and validate an agent configuration", "Run it through the common governed loop", "Capture events, results, limits, and failures"],
+    "takeaway": "A harness makes safe behaviour repeatable across agents, but this classroom version is not a complete production platform.",
+    "notebook": "Run two configurations through the same harness and trace where their policies cause different outcomes."
+  },
+  "08_exercise_tool_registry.ipynb": {
+    "idea": "This exercise builds the harness boundary that controls tool discovery and execution. The registry must reject duplicates and enforce capability grants twice.",
+    "example": "An add tool is visible and callable with math.read, but hidden and blocked when that capability is absent.",
+    "steps": ["Register each tool once", "Filter schemas by granted capabilities", "Reject unknown or ungranted dispatches"],
+    "takeaway": "Least-privilege discovery reduces temptation; protected dispatch provides the actual enforcement.",
+    "notebook": "Complete ToolRegistry and add tests for duplicate registration and unknown tool names."
+  },
+  "09_project_website_maintenance_agent.ipynb": {
+    "idea": "The operational capstone runs the full agent lifecycle on a realistic maintenance task: obtain updates, decide what matters, propose a website change, pass guardrails, request approval, and record the result. Automation only triggers this workflow; it does not remove its controls.",
+    "example": "A scheduled run reads a public release feed, compares it with stored state, drafts a bounded update, and stops at an approval gate before any website-changing action.",
+    "steps": ["Fetch or replay a bounded external update", "Use memory and tools to prepare an evidence-backed proposal", "Apply safety, approval, logging, and checkpoint rules"],
+    "takeaway": "An industry-style agent is an end-to-end governed system: model, tools, knowledge, memory, safety, observability, automation, and runtime working together.",
+    "notebook": "Run the cached path first, then one optional live observation. Confirm that no external change occurs without explicit approval."
+  }
+}

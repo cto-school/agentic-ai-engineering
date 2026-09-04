@@ -19,6 +19,8 @@ pnpm content
 
 `pnpm build` runs content generation automatically before creating the production build.
 
+The build also runs an alignment check across the canonical five-day syllabus, every day README, all 45 notebook files, copied portal notebooks, required projects, and referenced architecture diagrams. This prevents the website and classroom material from silently drifting apart.
+
 ## Google Colab links
 
 After this repository is published on GitHub, select **Set up Colab** in the portal and enter the public repository as `owner/repository` plus its branch name. The values are stored only in the current browser. Every notebook will then open directly in Google Colab.

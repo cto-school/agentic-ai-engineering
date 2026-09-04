@@ -65,13 +65,13 @@ The table below is the final delivery map. Notebook counts are intentionally une
 the number follows the conceptual steps required by the project, not an artificial
 daily template.
 
-| Day | Required project | Notebook path | Required inference path | Guided/optional exposure |
-|---|---|---|---|---|
-| 1 | Smart Research Assistant | `day_01_model_tools_agent/notebooks/` | OpenRouter or deterministic fallback | Ollama comparison, direct OpenAI once, LangGraph |
-| 2 | Engineering Knowledge Assistant | `day_02_knowledge_and_state/notebooks/` | Local/mock retrieval plus OpenRouter or extractive fallback | Sentence Transformers, Chroma |
-| 3 | Safe Personal Task Agent | `day_03_memory_and_safety/notebooks/` | Mock or OpenRouter action proposal with local policy | Mem0, LangSmith, Langfuse, LangGraph interrupt pattern |
-| 4 | Engineering Design Review Team | `day_04_multi_agent_systems/notebooks/` | Structured mock or OpenRouter reviewers | LangGraph fan-out representation, LangSmith traces |
-| 5 | Mini AI Harness and Website Maintenance Agent | `day_05_ai_harness/notebooks/` | Cached/mock first, then one bounded public-data or OpenRouter observation | Ollama adapter, real local MCP stdio, FastAPI/Docker extensions |
+| Day | Required project | Classroom notebook | Modular lesson sources | Required inference path | Guided/optional exposure |
+|---|---|---|---|---|---|
+| 1 | Smart Research Assistant | `day_01_model_tools_agent/day_01_complete.ipynb` | `day_01_model_tools_agent/notebooks/` | OpenRouter or deterministic fallback | Ollama comparison, direct OpenAI once, LangGraph |
+| 2 | Engineering Knowledge Assistant | `day_02_knowledge_and_state/day_02_complete.ipynb` | `day_02_knowledge_and_state/notebooks/` | Local/mock retrieval plus OpenRouter or extractive fallback | Sentence Transformers, Chroma |
+| 3 | Safe Personal Task Agent | `day_03_memory_and_safety/day_03_complete.ipynb` | `day_03_memory_and_safety/notebooks/` | Mock or OpenRouter action proposal with local policy | Mem0, LangSmith, Langfuse, LangGraph interrupt pattern |
+| 4 | Engineering Design Review Team | `day_04_multi_agent_systems/day_04_complete.ipynb` | `day_04_multi_agent_systems/notebooks/` | Structured mock or OpenRouter reviewers | LangGraph fan-out representation, LangSmith traces |
+| 5 | Mini AI Harness and Website Maintenance Agent | `day_05_ai_harness/day_05_complete.ipynb` | `day_05_ai_harness/notebooks/` | Cached/mock first, then one bounded public-data or OpenRouter observation | Ollama adapter, real local MCP stdio, FastAPI/Docker extensions |
 
 ### Day 1: From model to agent
 
@@ -131,6 +131,8 @@ Every required notebook now provides:
 - a bounded student modification;
 - a recap connecting the new layer to previous layers;
 - a link to the relevant external architecture diagrams.
+
+For classroom delivery, these lesson notebooks are assembled into one generated master notebook per day. Students remain in a single Colab runtime for the daily project, while instructors and maintainers continue editing and testing the smaller source notebooks.
 
 Short notebooks are not padded to satisfy a fixed cell count. A notebook is complete
 when the student can build or inspect the mechanism, observe its state, reproduce a

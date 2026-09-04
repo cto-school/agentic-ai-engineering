@@ -6,6 +6,8 @@ Build a Smart Research Assistant that can return predictable data, request tools
 
 All required theory is embedded in the notebooks at the point where it is used. Complete Notebook 08 after the guided manual-loop build.
 
+**Classroom notebook:** [`day_01_complete.ipynb`](day_01_complete.ipynb) combines all eight sections into one Colab-ready learning path. The files under `notebooks/` remain the modular source and standalone lesson versions.
+
 ## Progression
 
 ```text

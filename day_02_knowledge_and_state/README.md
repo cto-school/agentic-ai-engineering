@@ -6,6 +6,8 @@ Build an Engineering Knowledge Assistant that retrieves from supplied documents,
 
 All required theory is embedded in the notebooks at the point where it is used. Complete Notebook 09 after building basic RAG.
 
+**Classroom notebook:** [`day_02_complete.ipynb`](day_02_complete.ipynb) combines all nine sections into one Colab-ready learning path. The files under `notebooks/` remain the modular source and standalone lesson versions.
+
 ## Progression
 
 ```text

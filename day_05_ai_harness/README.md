@@ -7,6 +7,8 @@
 
 All required theory is embedded in the notebooks at the point where it is used. Notebook 08 is the independent tool-registry lab; Notebook 09 applies the harness to a recurring real-file workflow.
 
+**Classroom notebook:** [`day_05_complete.ipynb`](day_05_complete.ipynb) combines all nine sections into one Colab-ready learning path. The files under `notebooks/` remain the modular source and standalone lesson versions.
+
 Build a small reusable platform that hosts multiple agent configurations, then use it to operate a Website Maintenance Agent with public/cached data, durable state, named guardrails, approval, persistent local changes and verification.
 
 ## Progression

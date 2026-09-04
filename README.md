@@ -37,6 +37,8 @@ BUILD -> OBSERVE -> BREAK -> IMPROVE
 3. Check [accounts and API keys](setup/accounts_and_api_keys.md).
 4. Start with [Day 1](day_01_model_tools_agent/README.md).
 
+Students should normally open the single master notebook for the current day: `day_01_complete.ipynb` through `day_05_complete.ipynb`. Each master notebook contains a linked contents list, all guided sections, checkpoints, exercises, and the integrated daily project. The 45 files inside the day-specific `notebooks/` folders remain available as focused standalone lessons and are the maintained source of truth.
+
 ## Interactive course portal
 
 The React portal in [`course-portal/`](course-portal/) provides a collapsible five-day lesson tree, in-browser theory and code reading, architecture views, progress tracking, notebook downloads, and Google Colab launch links. After cloning the repository:

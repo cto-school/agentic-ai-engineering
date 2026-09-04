@@ -34,6 +34,21 @@ def validate_notebooks():
     return count,cells,theory_cells,live_cells
 
 
+def validate_master_notebooks():
+    for index,day in enumerate(DAYS,start=1):
+        path=day/f"day_{index:02d}_complete.ipynb"
+        if not path.exists(): raise AssertionError(f"Missing master notebook: {path.name}")
+        notebook=json.loads(path.read_text(encoding="utf-8"))
+        sources=sorted(p.name for p in (day/"notebooks").glob("*.ipynb"))
+        if notebook.get("metadata",{}).get("course",{}).get("generated_from") != sources:
+            raise AssertionError(f"Stale master notebook: {path.name}")
+        starts=sum("master-section-start" in cell.get("metadata",{}).get("tags",[]) for cell in notebook["cells"])
+        if starts != len(sources): raise AssertionError(f"Section mismatch in {path.name}: {starts} != {len(sources)}")
+        for cell in notebook["cells"]:
+            if cell["cell_type"]=="code": ast.parse("".join(cell["source"]))
+    return len(DAYS)
+
+
 def validate_python():
     files=[]
     for day in DAYS:
@@ -79,8 +94,8 @@ def validate_course_files():
 
 
 if __name__=="__main__":
-    notebooks,cells,theory_cells,live_cells=validate_notebooks(); python_files=validate_python(); (tests,skipped)=run_plain_tests(); docs=validate_course_files()
-    print(f"PASS: {notebooks} notebooks, {cells} code cells, {theory_cells} embedded theory cells, {live_cells} live-observation cells, {python_files} Python files, {tests} executed tests, {docs} key documents")
+    notebooks,cells,theory_cells,live_cells=validate_notebooks(); masters=validate_master_notebooks(); python_files=validate_python(); (tests,skipped)=run_plain_tests(); docs=validate_course_files()
+    print(f"PASS: {masters} master notebooks, {notebooks} modular notebooks, {cells} modular code cells, {theory_cells} embedded theory cells, {live_cells} live-observation cells, {python_files} Python files, {tests} executed tests, {docs} key documents")
     if skipped:
         print("WARN: install requirements.txt to execute skipped test modules:")
         for item in skipped: print(" -",item)
