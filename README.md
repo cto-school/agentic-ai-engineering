@@ -37,15 +37,17 @@ BUILD -> OBSERVE -> BREAK -> IMPROVE
 3. Check [accounts and API keys](setup/accounts_and_api_keys.md).
 4. Start with [Day 1](day_01_model_tools_agent/README.md).
 
-Students should normally open the single master notebook for the current day: `day_01_complete.ipynb` through `day_05_complete.ipynb`. Each master notebook starts with one **Environment setup** cell (Colab clone and install, or local `.env` loading), then a linked contents list, all guided sections, one hands-on exercise with a commented reference solution, and the integrated daily project. The 45 files inside the day-specific `notebooks/` folders remain available as focused standalone lessons and are the maintained source of truth.
+Students open one Google Colab notebook per day: `day_01_complete.ipynb` through `day_05_complete.ipynb`. Each day notebook is the **source of truth**: a short setup, the guided sections in order, one hands-on exercise with a commented reference solution, and the integrated daily project. The files inside each day's `notebooks/` folder are derived from the day notebook by `split_day_notebooks.py` so the course portal can show one lesson at a time; do not edit them by hand.
+
+Day 1 is fully self-contained (no repository clone, no local files). Days 2 to 5 still carry a Colab bootstrap cell that clones the repository for their `src/` packages and data; they are next in line for the same simplification.
 
 ## How the lessons teach
 
 Every lesson is a step-by-step build: a short explanation, then a code cell that does one thing and prints labelled output, with comments where a beginner needs them. Each lesson contains at most one **Try it yourself** prompt, immediately followed by a fully commented worked solution, and ends with a **Checkpoint** (answers folded under *Show answer*) and a three-line **Recap**. Every notebook runs completely without an API key in deterministic mock mode; live model calls are used only where model behaviour is the lesson and always fall back to mock on failure.
 
-## API key and `.env` file
+## API key
 
-Day 1 Lesson 1 walks through creating the `.env` file: copy `.env.example` to `.env` in the repository root (next to `README.md`), put `OPENROUTER_API_KEY=...` in it, never commit it. Every notebook's setup cell loads that file automatically. On Google Colab the master notebook's setup cell asks for the key instead and keeps it only in that runtime.
+Students work in Google Colab. The setup cell at the top of each day notebook looks for a Colab secret named `OPENROUTER_API_KEY` (key icon in Colab's left sidebar), then an environment variable, and otherwise asks once; pressing Enter keeps the notebook in mock mode. Instructors running locally can still put the key in a `.env` file copied from `.env.example`.
 
 ## Interactive course portal
 
@@ -68,11 +70,11 @@ Six [pivotal coding exercise notebooks](exercises/README.md), one per day (two o
 After installing the required packages, run:
 
 ```powershell
-py build_student_learning_materials.py
+py split_day_notebooks.py
 py validate_course.py
 ```
 
-The first command idempotently embeds the maintained theory sources (`day_*/theory.md`), rebuilds the six exercise notebooks, and regenerates the five master notebooks. The per-day `build_notebooks.py` and `enrich_day1_day2_notebooks.py` generators are archived: the lesson notebooks are hand-maintained and those scripts refuse to run without `--force`. The validator checks notebook JSON and code-cell syntax, compiles reference Python,
+The first command derives the lesson notebooks from the five day notebooks. The older generators (`build_master_notebooks.py`, `build_student_learning_materials.py`, the per-day `build_notebooks.py`, `enrich_day1_day2_notebooks.py`) worked in the opposite direction and are archived: they refuse to run without `--force`. The validator checks notebook JSON and code-cell syntax, compiles reference Python,
 runs dependency-compatible offline tests, and confirms key teaching documents. It
 reports tests skipped because a staged dependency is not installed.
 

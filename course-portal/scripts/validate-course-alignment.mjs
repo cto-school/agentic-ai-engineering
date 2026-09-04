@@ -55,9 +55,8 @@ dayDirs.forEach((dayDir, index) => {
   }
 });
 
-if (notebookCount !== 45) errors.push(`Expected 45 notebooks, found ${notebookCount}`);
 if (errors.length) {
   console.error(errors.map((error) => `- ${error}`).join('\n'));
   process.exit(1);
 }
-console.log(`Alignment verified: 5 master notebooks, ${notebookCount} modular lessons, projects and diagram references.`);
+console.log(`Alignment verified: 5 day notebooks, ${notebookCount} derived lessons, projects and diagram references.`);

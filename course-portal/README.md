@@ -4,7 +4,7 @@ An interactive reader for the five-day Agentic AI Engineering curriculum. Studen
 
 ## What students get
 
-- **Getting started** page: how the course works, the four steps before Day 1, the complete `.env` and API-key guide (the same text as Day 1 Lesson 1), Google Colab configuration, and a progress reset.
+- **Getting started** page: how the course works, the three steps before Day 1, the API-key guide (the same text that opens the Day 1 notebook), Google Colab configuration, and a progress reset.
 - For every one of the 45 lessons, three views:
   - **Learn**: the beginner guide (idea, mental picture, steps, key distinction, common mistake), the lesson's *Before you begin* block, the full **Concept briefing** theory text from the notebook, and the **Checkpoint and recap** with answers folded under *Show answer*.
   - **Notebook**: the complete lesson notebook rendered cell by cell, markdown and code in reading order.

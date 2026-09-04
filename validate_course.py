@@ -1,4 +1,8 @@
-"""Offline repository-wide course validation. No API keys or hosted calls required."""
+"""Offline repository-wide course validation. No API keys or hosted calls required.
+
+The day notebooks (day_0X_complete.ipynb) are the source of truth; the lesson notebooks
+under each notebooks/ folder are derived from them by split_day_notebooks.py.
+"""
 from __future__ import annotations
 import ast, importlib.util, json, py_compile, sys
 from pathlib import Path
@@ -9,44 +13,53 @@ DAYS=[ROOT/f"day_{n:02d}_{slug}" for n,slug in [
     (4,"multi_agent_systems"),(5,"ai_harness")]]
 
 
-def validate_notebooks():
-    count=cells=theory_cells=live_cells=0
-    for day in DAYS:
-        files=sorted((day/"notebooks").glob("*.ipynb"))
-        if not files: raise AssertionError(f"No notebooks: {day.name}")
-        for path in files:
-            notebook=json.loads(path.read_text(encoding="utf-8")); count+=1
-            if notebook.get("nbformat")!=4: raise AssertionError(f"Unexpected format: {path}")
-            for cell in notebook["cells"]:
-                if cell["cell_type"]=="code": ast.parse("".join(cell["source"])); cells+=1
-                if "embedded-course-theory" in cell.get("metadata",{}).get("tags",[]): theory_cells+=1
-                if "required-live-observation" in cell.get("metadata",{}).get("tags",[]): live_cells+=1
-    if count != 45: raise AssertionError(f"Expected 45 notebooks including exercises and operational capstone, found {count}")
-    if theory_cells < 31: raise AssertionError(f"Embedded theory missing: found {theory_cells} tagged cells")
-    if live_cells != 5: raise AssertionError(f"Expected five required live-observation cells, found {live_cells}")
-    required_exercises={
-        "08_exercise_manual_agent_loop.ipynb", "09_exercise_rag_context.ipynb",
-        "10_exercise_history_compaction.ipynb", "11_exercise_action_policy.ipynb",
-        "08_exercise_supervisor_merge.ipynb", "08_exercise_tool_registry.ipynb",
-    }
-    actual={p.name for day in DAYS for p in (day/"notebooks").glob("*_exercise_*.ipynb")}
-    if actual != required_exercises: raise AssertionError(f"Exercise notebook mismatch: {actual}")
-    return count,cells,theory_cells,live_cells
+def _tags(cell): return set(cell.get("metadata",{}).get("tags",[]))
 
 
-def validate_master_notebooks():
+def _python(cell):
+    """Code-cell source with IPython magics (%pip, !cmd) removed so ast can parse it."""
+    return "".join(line for line in cell["source"] if not line.startswith(("%","!")))   # magics sit in column 0
+
+
+def validate_day_notebooks():
+    """Each day notebook exists, parses, lists its sections, and has one live observation."""
+    sections=cells=live=0
     for index,day in enumerate(DAYS,start=1):
         path=day/f"day_{index:02d}_complete.ipynb"
-        if not path.exists(): raise AssertionError(f"Missing master notebook: {path.name}")
+        if not path.exists(): raise AssertionError(f"Missing day notebook: {path.name}")
         notebook=json.loads(path.read_text(encoding="utf-8"))
-        sources=sorted(p.name for p in (day/"notebooks").glob("*.ipynb"))
-        if notebook.get("metadata",{}).get("course",{}).get("generated_from") != sources:
-            raise AssertionError(f"Stale master notebook: {path.name}")
-        starts=sum("master-section-start" in cell.get("metadata",{}).get("tags",[]) for cell in notebook["cells"])
-        if starts != len(sources): raise AssertionError(f"Section mismatch in {path.name}: {starts} != {len(sources)}")
+        if notebook.get("nbformat")!=4: raise AssertionError(f"Unexpected format: {path}")
+        files=notebook.get("metadata",{}).get("course",{}).get("generated_from") or []
+        starts=[c for c in notebook["cells"] if "master-section-start" in _tags(c)]
+        if not files or len(starts)!=len(files):
+            raise AssertionError(f"{path.name}: {len(starts)} section starts but {len(files)} section files listed")
+        if not any(f.split("_",1)[1].startswith("exercise_") or "_exercise_" in f for f in files):
+            raise AssertionError(f"{path.name}: no hands-on exercise section")
+        day_live=0
         for cell in notebook["cells"]:
-            if cell["cell_type"]=="code": ast.parse("".join(cell["source"]))
-    return len(DAYS)
+            if cell["cell_type"]=="code": ast.parse(_python(cell)); cells+=1
+            if "required-live-observation" in _tags(cell): day_live+=1
+        if day_live!=1: raise AssertionError(f"{path.name}: expected one live-observation cell, found {day_live}")
+        live+=day_live; sections+=len(files)
+    return sections,cells,live
+
+
+def validate_lesson_notebooks():
+    """Derived lesson notebooks match the section list of their day notebook and parse."""
+    count=0
+    for index,day in enumerate(DAYS,start=1):
+        master=json.loads((day/f"day_{index:02d}_complete.ipynb").read_text(encoding="utf-8"))
+        expected=sorted(master["metadata"]["course"]["generated_from"])
+        actual=sorted(p.name for p in (day/"notebooks").glob("*.ipynb"))
+        if expected!=actual:
+            raise AssertionError(f"{day.name}: lesson notebooks differ from the day notebook's section list.\n  run: py split_day_notebooks.py\n  expected {expected}\n  found    {actual}")
+        for path in (day/"notebooks").glob("*.ipynb"):
+            notebook=json.loads(path.read_text(encoding="utf-8")); count+=1
+            markdown="".join("".join(c["source"]) for c in notebook["cells"] if c["cell_type"]=="markdown")
+            if not markdown.strip(): raise AssertionError(f"{path}: no student-facing explanation")
+            for cell in notebook["cells"]:
+                if cell["cell_type"]=="code": ast.parse(_python(cell))
+    return count
 
 
 def validate_python():
@@ -55,6 +68,7 @@ def validate_python():
         files += list((day/"src").rglob("*.py"))
         files += list((day/"tests").glob("test_*.py"))
     files += list((ROOT/"exercises").rglob("*.py"))
+    files.append(ROOT/"split_day_notebooks.py")
     for path in files: py_compile.compile(str(path),doraise=True)
     return len(files)
 
@@ -94,8 +108,8 @@ def validate_course_files():
 
 
 if __name__=="__main__":
-    notebooks,cells,theory_cells,live_cells=validate_notebooks(); masters=validate_master_notebooks(); python_files=validate_python(); (tests,skipped)=run_plain_tests(); docs=validate_course_files()
-    print(f"PASS: {masters} master notebooks, {notebooks} modular notebooks, {cells} modular code cells, {theory_cells} embedded theory cells, {live_cells} live-observation cells, {python_files} Python files, {tests} executed tests, {docs} key documents")
+    sections,cells,live=validate_day_notebooks(); lessons=validate_lesson_notebooks(); python_files=validate_python(); (tests,skipped)=run_plain_tests(); docs=validate_course_files()
+    print(f"PASS: 5 day notebooks with {sections} sections and {cells} code cells, {lessons} derived lesson notebooks, {live} live-observation cells, {python_files} Python files, {tests} executed tests, {docs} key documents")
     if skipped:
         print("WARN: install requirements.txt to execute skipped test modules:")
         for item in skipped: print(" -",item)

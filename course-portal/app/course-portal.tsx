@@ -135,22 +135,21 @@ function GettingStarted({ settings, onSettings, onOpenLesson, onResetProgress }:
   return <div className="lesson-guide getting-started">
     <section className="start-hero"><p className="eyebrow">Start here</p><h2>How this course works</h2>
       <ul className="start-list">
-        <li><strong>Five days, five projects.</strong> Each day has one master notebook that you run top to bottom, and the same content split into short lessons for reference. This portal mirrors every lesson.</li>
+        <li><strong>Five days, five notebooks.</strong> Each day is one Google Colab notebook that you run top to bottom. This portal shows the same content split into lessons, so you can read ahead, revise, or catch up.</li>
         <li><strong>Learn by running.</strong> Lessons are step-by-step: a short explanation, then a small code cell that prints what happened. Read the output, then the comments, then move on.</li>
         <li><strong>Try it, then see the answer.</strong> Each lesson has at most one <em>Try it yourself</em> prompt, always followed by a fully commented worked solution. Every day ends with one hands-on exercise that also carries a reference solution.</li>
-        <li><strong>No key needed to learn.</strong> Without an API key every cell runs in deterministic <em>mock</em> mode and spends nothing. Live model calls are used only where the model&apos;s behaviour is the lesson, and they fall back to mock automatically.</li>
+        <li><strong>No key needed to learn.</strong> Without an API key every cell runs on a built-in <em>mock model</em>: canned replies, real request and response shapes, zero cost. With your issued key the same cells talk to the real model.</li>
         <li><strong>Checkpoints have answers.</strong> Each lesson ends with two questions; the answers are folded under <em>Show answer</em>.</li>
       </ul>
     </section>
-    <section><h2>Four steps before Day 1</h2>
+    <section><h2>Three steps before Day 1</h2>
       <ol className="guide-steps">
-        <li><span>1</span><p><strong>Install Python and the course packages</strong> following <code>setup/installation_guide.md</code> in the repository{configured && <> (<a href={githubUrl(settings, 'setup/installation_guide.md')} target="_blank" rel="noreferrer">open on GitHub</a>)</>}. Python 3.10 or newer is enough.</p></li>
-        <li><span>2</span><p><strong>Create your <code>.env</code> file</strong> with the issued OpenRouter key, exactly as described below. Skip this step entirely if you want to stay in mock mode.</p></li>
-        <li><span>3</span><p><strong>Open the Day 1 master notebook</strong> locally with Jupyter, or in Google Colab using the links in this portal once the repository is configured.</p></li>
-        <li><span>4</span><p><strong>Use this portal alongside the notebook.</strong> <em>Learn</em> explains the idea and the theory, <em>Notebook</em> shows every cell with its explanation, and <em>System view</em> draws the architecture.</p></li>
+        <li><span>1</span><p><strong>Open the Day 1 notebook in Google Colab</strong> from the link in the sidebar. Nothing needs installing.</p></li>
+        <li><span>2</span><p><strong>Add your OpenRouter key</strong> as a Colab secret named <code>OPENROUTER_API_KEY</code> (key icon in Colab&apos;s left sidebar), or paste it when the setup cell asks. Press Enter instead to stay in mock mode.</p></li>
+        <li><span>3</span><p><strong>Run the cells in order and use this portal alongside.</strong> <em>Learn</em> explains the idea and the theory, <em>Notebook</em> shows every cell with its explanation, and <em>System view</em> draws the architecture.</p></li>
       </ol>
     </section>
-    <section className="setup-guide"><h2>Your API key and the .env file</h2><p className="section-hint">This is the same guide that appears in Day 1 Lesson 1.</p><Markdown source={setupGuide.replace(/^##\s+Setting up your \.env file\s*/m, '')} /></section>
+    <section className="setup-guide"><h2>Your API key</h2><p className="section-hint">This is the same text that opens the Day 1 notebook.</p><Markdown source={setupGuide.replace(/^##\s+Your API key.*\s*/m, '')} /></section>
     <section className="colab-settings"><h2>Google Colab links</h2>
       <p>Colab opens notebooks straight from a public GitHub repository. Enter the course repository once; the value is stored only in this browser and every <em>Open in Colab</em> link in the portal will use it.</p>
       <form className="colab-form" onSubmit={(event) => { event.preventDefault(); onSettings({ repo: repo.trim() || DEFAULT_COLAB.repo, branch: branch.trim() || 'main' }); }}>

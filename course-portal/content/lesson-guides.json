@@ -43,16 +43,16 @@
     "takeaway": "The model requests capabilities; the host application owns execution and permission.",
     "notebook": "Follow one calculator request from user message to tool proposal, Python execution, tool result, and final answer."
   },
-  "05_manual_agent_loop.ipynb": {
+  "05_exercise_manual_agent_loop.ipynb": {
     "idea": "An agent is a controlled loop around a model. On each turn the model either asks for a tool or returns a final answer; the application records the result and decides whether another turn is allowed.",
     "example": "A research assistant may search, read one result, notice missing evidence, search again, and then answer. That sequence emerges one bounded step at a time.",
     "steps": [
       "Ask the model for the next action",
-      "Execute an allowed tool and append its result",
-      "Stop on a final answer, error, or step limit"
+      "Validate and execute an allowed tool, then append its result",
+      "Stop on a final answer, a bad request, or the step limit"
     ],
     "takeaway": "The loop—not the prompt alone—creates agentic behaviour. Python must own termination and failure handling.",
-    "notebook": "Trace the messages after every iteration and test what happens when the model never finishes or asks for an unknown tool."
+    "notebook": "Write run_agent yourself, run the scripted check, then compare with the reference solution that the rest of the day uses. Watch the trace with two real tools, force the step limit, and catch a stuck model."
   },
   "06_langgraph_agent.ipynb": {
     "idea": "LangGraph represents the same agent loop as explicit state, nodes, and transitions. It becomes useful when the workflow needs branching, checkpoints, resumability, or inspection.",
@@ -75,17 +75,6 @@
     ],
     "takeaway": "A useful agent is a model embedded in a controlled application workflow.",
     "notebook": "Run the complete path, then deliberately trigger a tool error or step limit and explain how the system responds."
-  },
-  "08_exercise_manual_agent_loop.ipynb": {
-    "idea": "This exercise checks whether you can implement the core mechanism without relying on a framework. You will complete the loop that separates model proposals from application execution.",
-    "example": "A fake model first requests add(2, 3), then returns a final response after Python appends the result to the history.",
-    "steps": [
-      "Handle final and tool responses",
-      "Validate and dispatch the requested tool",
-      "Enforce the maximum number of steps"
-    ],
-    "takeaway": "If you can build this loop, later agent frameworks become readable rather than magical.",
-    "notebook": "Complete run_agent, run the behavioural check (dispatch, unknown tool, step limit), then compare your code line by line with the commented reference solution that follows."
   },
   "01_documents_and_chunks.ipynb": {
     "idea": "A model cannot use private course documents unless the application places relevant text in its context. Retrieval begins by turning documents into smaller, labelled units called chunks.",

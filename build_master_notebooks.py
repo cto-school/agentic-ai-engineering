@@ -4,8 +4,16 @@ The smaller notebooks remain the maintainable source of truth. This generator gi
 students a single, ordered notebook for each six-hour project day without duplicating
 hand-maintained teaching content.
 """
-
 from __future__ import annotations
+
+import sys as _sys
+if "--force" not in _sys.argv:  # pragma: no cover
+    raise SystemExit(
+        "ARCHIVED: the day notebooks (day_0X_complete.ipynb) are now the source of truth and the "
+        "lesson notebooks are derived from them by split_day_notebooks.py. This generator worked in "
+        "the opposite direction and would overwrite the day notebooks. Run with --force only if you mean it."
+    )
+
 
 import copy
 import json
