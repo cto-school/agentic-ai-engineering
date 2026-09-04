@@ -226,3 +226,13 @@ Students first implement a transparent local mechanism, then inspect a productiz
 - Mem0 OSS and Langfuse are presented as self-hostable alternatives.
 
 Only fictional users, synthetic prompts, supplied public course documents, and deliberately created code artifacts may be sent to these hosted platforms.
+
+## Optional LangChain track
+
+A separate, self-contained notebook (`langchain_track/langchain_complete.ipynb`) teaches the same
+ideas through LangChain 1.x and LangGraph. Students build one agent, OpsPilot, fourteen times:
+model call, tool calling by hand, `create_agent()`, production-shaped tools, structured output,
+conversation and long-term memory, retrieval, planning, middleware and permissions,
+human-in-the-loop, an explicit LangGraph workflow, a supervisor with specialists, and streaming
+with tracing. It has no exercises or graded checks, runs in mock mode without a key, and can be
+taken after Day 1 or on its own. It is not part of the five-day timetable.

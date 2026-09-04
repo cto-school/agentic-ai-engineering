@@ -28,7 +28,15 @@ const diagramMap = {
   '03_exercise_tool_registry.ipynb': ['D16'], '04_permissions_and_limits.ipynb': ['D16'],
   '05_events_logs_and_checkpoints.ipynb': ['D16'], '06_mcp_client.ipynb': ['D17'],
   '07_project_mini_harness.ipynb': ['D16', 'D18'],
-  '08_project_website_maintenance_agent.ipynb': ['D18', 'D19']
+  '08_project_website_maintenance_agent.ipynb': ['D18', 'D19'],
+  // LangChain track
+  '01_plain_model_call.ipynb': ['D20'], '02_tool_calling_by_hand.ipynb': ['D21'],
+  '03_first_agent.ipynb': ['D22'], '04_production_ready_tools.ipynb': ['D21'],
+  '05_structured_output.ipynb': ['D23'], '06_conversation_memory.ipynb': ['D24'],
+  '07_long_term_memory.ipynb': ['D24'], '08_knowledge_rag.ipynb': ['D25'],
+  '09_research_and_planning.ipynb': ['D22'], '10_middleware_guardrails_permissions.ipynb': ['D26'],
+  '11_human_in_the_loop.ipynb': ['D27'], '12_langgraph_workflow.ipynb': ['D28'],
+  '13_multi_agent.ipynb': ['D29'], '14_streaming_observability_production.ipynb': ['D26', 'D30']
 };
 
 const days = [
@@ -59,13 +67,23 @@ const days = [
     projectFlow: ['Separate configuration from the runtime', 'Register, govern, and limit tools', 'Record events, resume from checkpoints, connect MCP', 'Run the maintenance agent through the harness'] },
 ];
 
+// Tracks sit beside the five days: one self-contained notebook each, split into sections the same way.
+const tracks = [
+  { dir: 'langchain_track', masterFile: 'langchain_complete.ipynb', diagramSource: 'langchain.md', code: 'L', label: 'LangChain', name: 'the LangChain track',
+    short: 'LangChain', title: 'LangChain Track', project: 'OpsPilot', projectLesson: 14, color: '#1c9c8a',
+    outcome: 'Grow one LangChain agent from a model call to a production-shaped system.',
+    prerequisite: 'Separate from the five days. Knowing what a model call and a tool are (Day 1) helps; every LangChain and LangGraph idea is introduced from scratch.',
+    projectBrief: 'You build OpsPilot, an operations assistant, fourteen times with LangChain 1.x and LangGraph. Each version solves a problem the previous one visibly had: tools, structured output, memory, retrieval, planning, middleware, human approval, explicit workflows, specialists, streaming and tracing.',
+    projectFlow: ['Call a model, then let it request tools', 'Add structured output, memory and knowledge', 'Guard it with middleware and human approval', 'Shape workflows, specialists and observability'] },
+];
+
 function plainTitle(source, fallback) {
   const match = source.match(/^#\s+(.+)$/m);
   return match ? match[1].replace(/[*`]/g, '').trim() : fallback;
 }
 
-function diagramCatalog(dayNumber) {
-  const file = path.join(courseRoot, 'diagrams', 'source', `day_${String(dayNumber).padStart(2, '0')}.md`);
+function diagramCatalog(sourceFile) {
+  const file = path.join(courseRoot, 'diagrams', 'source', sourceFile);
   const source = fs.readFileSync(file, 'utf8');
   const entries = [];
   const pattern = /^##\s+(D\d+)\s+—\s+(.+?)\s*$[\s\S]*?```mermaid\s*\n([\s\S]*?)```/gm;
@@ -109,17 +127,27 @@ function relocateImages(markdown) {
 
 let setupGuide = '';
 
-const data = days.map((day, dayIndex) => {
-  const diagrams = diagramCatalog(dayIndex + 1);
+const units = [
+  ...days.map((day, index) => ({ ...day, kind: 'day', number: index + 1, code: String(index + 1), label: `Day ${index + 1}`, name: `Day ${index + 1}`,
+    masterFile: `day_${String(index + 1).padStart(2, '0')}_complete.ipynb`, diagramSource: `day_${String(index + 1).padStart(2, '0')}.md` })),
+  ...tracks.map((track) => ({ ...track, kind: 'track', number: 0 })),
+];
+
+const data = units.map((day, dayIndex) => {
+  const diagrams = diagramCatalog(day.diagramSource);
   const notebooksDir = path.join(courseRoot, day.dir, 'notebooks');
   const destination = path.join(outputRoot, day.dir);
   fs.mkdirSync(destination, { recursive: true });
-  const masterFile = `day_${String(dayIndex + 1).padStart(2, '0')}_complete.ipynb`;
+  const masterFile = day.masterFile;
   fs.copyFileSync(path.join(courseRoot, day.dir, masterFile), path.join(destination, masterFile));
   const notebooks = fs.readdirSync(notebooksDir).filter((name) => name.endsWith('.ipynb')).sort();
   return {
     id: day.dir,
-    number: dayIndex + 1,
+    kind: day.kind,
+    number: day.number,
+    code: day.code,
+    label: day.label,
+    name: day.name,
     short: day.short,
     title: day.title,
     project: day.project,
@@ -154,8 +182,9 @@ const data = days.map((day, dayIndex) => {
       const lessonDiagrams = diagrams.filter((diagram) => referencedDiagramIds.includes(diagram.id));
       if (lessonDiagrams.length !== referencedDiagramIds.length) throw new Error(`Missing mapped diagram for ${day.dir}/${file}`);
       return {
-        id: `${dayIndex + 1}-${notebookIndex + 1}`,
+        id: `${day.kind === 'day' ? dayIndex + 1 : day.code}-${notebookIndex + 1}`,
         order: notebookIndex + 1,
+        sectionCode: day.kind === 'day' ? `${day.number}.${notebookIndex + 1}` : `${day.code}${notebookIndex + 1}`,
         file,
         path: `${day.dir}/notebooks/${file}`,
         publicPath: `/notebooks/${day.dir}/${file}`,
@@ -180,4 +209,4 @@ const out = `// Generated by scripts/build-course-content.mjs. Do not edit by ha
   + `export const courseDays = ${JSON.stringify(data, null, 2)};\n\n`
   + `export const setupGuide = ${JSON.stringify(setupGuide)};\n`;
 fs.writeFileSync(path.join(siteRoot, 'app', 'course-data.ts'), out);
-console.log(`Prepared ${data.reduce((sum, day) => sum + day.notebooks.length, 0)} notebooks.`);
+console.log(`Prepared ${data.reduce((sum, day) => sum + day.notebooks.length, 0)} notebooks across ${days.length} days and ${tracks.length} track(s).`);

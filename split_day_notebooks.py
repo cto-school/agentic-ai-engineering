@@ -6,7 +6,10 @@ lists the section file names in order. The cells before the first section (API k
 setup, mock model) are prepended to section 1 so that lesson stays runnable on its own.
 Boilerplate cells from the older concatenation pipeline are dropped.
 
-Run after editing a day notebook:  py split_day_notebooks.py
+The LangChain track (``langchain_track/langchain_complete.ipynb``) is split the same way;
+its sections are headed ``## L3 — Title`` instead of ``## 1.3 — Title``.
+
+Run after editing a day or track notebook:  py split_day_notebooks.py
 """
 from __future__ import annotations
 
@@ -23,6 +26,7 @@ DAYS = [
     "day_04_multi_agent_systems",
     "day_05_ai_harness",
 ]
+TRACKS = {"langchain_track": "langchain_complete.ipynb"}     # directory -> track notebook
 SKIP_TAGS = {"master-notebook-introduction", "master-section-checkpoint", "master-notebook-completion"}
 
 
@@ -52,14 +56,19 @@ def promote_heading(cell: dict) -> dict:
         day, number, title = match.groups()
         heading = title if re.match(r"^Day \d+ (Project|Capstone) — ", title) else f"Day {day}.{number} — {title}"
         body = body[: match.start()] + f"# {heading}" + body[match.end():]
+    track_match = re.match(r"^##\s+L(\d+)\s+—\s+(.+?)\s*$", body, flags=re.MULTILINE)
+    if track_match:
+        number, title = track_match.groups()
+        body = body[: track_match.start()] + f"# LangChain L{number} — {title}" + body[track_match.end():]
     cloned["source"] = body.splitlines(keepends=True)
     cloned.setdefault("metadata", {})["tags"] = sorted(tags(cloned) - {"master-section-start"})
     return cloned
 
 
-def split_day(day_index: int, directory: str) -> list[str]:
+def split_day(day_index: int, directory: str, master_file: str | None = None) -> list[str]:
+    """Split one master notebook; day_index 0 marks a track rather than a course day."""
     day_dir = ROOT / directory
-    master_path = day_dir / f"day_{day_index:02d}_complete.ipynb"
+    master_path = day_dir / (master_file or f"day_{day_index:02d}_complete.ipynb")
     master = json.loads(master_path.read_text(encoding="utf-8"))
     files = master["metadata"]["course"]["generated_from"]
     cells = master["cells"]
@@ -78,7 +87,9 @@ def split_day(day_index: int, directory: str) -> list[str]:
             "metadata": {
                 "kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
                 "language_info": {"name": "python", "version": "3.11"},
-                "course": {"day": day_index, "section": number, "derived_from": master_path.name, "source_of_truth": "day notebook"},
+                "course": ({"track": master["metadata"]["course"].get("track", directory), "section": number, "derived_from": master_path.name, "source_of_truth": "track notebook"}
+                           if master_file else
+                           {"day": day_index, "section": number, "derived_from": master_path.name, "source_of_truth": "day notebook"}),
             },
             "nbformat": 4,
             "nbformat_minor": 5,
@@ -96,7 +107,11 @@ def main() -> None:
         files = split_day(index, directory)
         total += len(files)
         print(f"{directory}: {len(files)} lesson notebooks derived")
-    print(f"Derived {total} lesson notebooks from 5 day notebooks.")
+    for directory, master_file in TRACKS.items():
+        files = split_day(0, directory, master_file)
+        total += len(files)
+        print(f"{directory}: {len(files)} lesson notebooks derived")
+    print(f"Derived {total} lesson notebooks from 5 day notebooks and {len(TRACKS)} track notebook(s).")
 
 
 if __name__ == "__main__":

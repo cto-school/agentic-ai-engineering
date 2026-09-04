@@ -4,12 +4,12 @@ An interactive reader for the five-day Agentic AI Engineering curriculum. Studen
 
 ## What students get
 
-- **Getting started** page: how the course works in four lines, a course map of the five days (project and outcome per day), the three steps before Day 1, the API-key guide (the same text that opens the Day 1 notebook), Google Colab configuration, and a progress reset.
-- For every one of the 39 sections, three views:
+- **Getting started** page: the course map (five days plus the separate LangChain track), how the course works in four lines, a course map of the five days (project and outcome per day), the three steps before Day 1, the API-key guide (the same text that opens the Day 1 notebook), Google Colab configuration, and a progress reset.
+- For every one of the 39 day sections and the 14 LangChain-track sections, three views:
   - **Learn**: a short plain-language guide (the idea, a picture, three steps, the distinction to keep straight, the common mistake, what to notice when you run it), followed by the section's own explanations from the notebook with the checkpoint answers folded out.
   - **Notebook**: the complete section rendered cell by cell, explanations and code in running order.
   - **System view**: the section's architecture diagrams drawn from the Mermaid sources, with a text alternative.
-- Sidebar search across titles, guides and explanations; per-section completion tracking stored in the browser; notebook downloads; and one-click Colab links.
+- Sidebar search across titles, guides and explanations; per-section completion tracking stored in the browser; and one Colab link per day (next to the Learn tab and in the sidebar) that opens the complete day notebook. Sections are never opened or downloaded individually, because definitions carry forward within a day.
 
 ## Run locally
 
@@ -24,7 +24,7 @@ The portal copies and indexes the source notebooks during content generation:
 pnpm content
 ```
 
-`pnpm build` runs content generation automatically before creating the production build. The build also runs an alignment check across the canonical five-day syllabus, every day README, all 45 notebook files, copied portal notebooks, required projects, and referenced architecture diagrams, so the website and classroom material cannot silently drift apart.
+`pnpm build` runs content generation automatically before creating the production build. The build also runs an alignment check across the canonical five-day syllabus, every day README, every day and track notebook file, copied portal notebooks, required projects, and referenced architecture diagrams, so the website and classroom material cannot silently drift apart.
 
 ## Google Colab links
 

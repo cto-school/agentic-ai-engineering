@@ -49,6 +49,19 @@ Every lesson is a step-by-step build: a short explanation, then a code cell that
 
 Students work in Google Colab. The setup cell at the top of each day notebook looks for a Colab secret named `OPENROUTER_API_KEY` (key icon in Colab's left sidebar), then an environment variable, and otherwise asks once; pressing Enter keeps the notebook in mock mode. Instructors running locally can still put the key in a `.env` file copied from `.env.example`.
 
+## LangChain track (separate from the five days)
+
+`langchain_track/langchain_complete.ipynb` is one more self-contained Colab notebook that teaches
+the same ideas through **LangChain 1.x** (`create_agent`, tools, middleware, structured output) and
+**LangGraph** (persistence, interrupts, explicit workflows). Students grow one agent, OpsPilot,
+fourteen times: model call, tool loop by hand, `create_agent()`, hardened tools, structured output,
+conversation memory, long-term memory, retrieval, planning, middleware and permissions,
+human-in-the-loop, an explicit graph, a supervisor with specialists, and streaming with tracing.
+There are no exercises; each section is theory, a sketch, runnable commented code and a recap.
+Without a key the notebook runs on a built-in mock chat model, so every mechanism can be studied for
+free. See [the track README](langchain_track/README.md). The portal lists it as a separate section
+beside the five-day path.
+
 ## Interactive course portal
 
 The React portal in [`course-portal/`](course-portal/) provides a collapsible five-day lesson tree, in-browser theory and code reading, architecture views, progress tracking, notebook downloads, and Google Colab launch links. After cloning the repository:
@@ -74,7 +87,7 @@ py split_day_notebooks.py
 py validate_course.py
 ```
 
-The first command derives the lesson notebooks from the five day notebooks. The older generators (`build_master_notebooks.py`, `build_student_learning_materials.py`, the per-day `build_notebooks.py`, `enrich_day1_day2_notebooks.py`) worked in the opposite direction and are archived: they refuse to run without `--force`. The validator checks notebook JSON and code-cell syntax, compiles reference Python,
+The first command derives the lesson notebooks from the five day notebooks and the LangChain track notebook. The older generators (`build_master_notebooks.py`, `build_student_learning_materials.py`, the per-day `build_notebooks.py`, `enrich_day1_day2_notebooks.py`) worked in the opposite direction and are archived: they refuse to run without `--force`. The validator checks notebook JSON and code-cell syntax, compiles reference Python,
 runs dependency-compatible offline tests, and confirms key teaching documents. It
 reports tests skipped because a staged dependency is not installed.
 

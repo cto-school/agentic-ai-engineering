@@ -10,6 +10,8 @@ const dayDirs = [
   'day_04_multi_agent_systems',
   'day_05_ai_harness',
 ];
+// Tracks beside the five days: [directory, master notebook, diagram source]
+const trackUnits = [['langchain_track', 'langchain_complete.ipynb', 'langchain.md']];
 const expectedProjects = [
   'Smart Research Assistant',
   'Engineering Knowledge Assistant',
@@ -25,16 +27,20 @@ expectedProjects.forEach((project) => {
   if (!syllabus.includes(project)) errors.push(`Syllabus is missing project: ${project}`);
 });
 
-dayDirs.forEach((dayDir, index) => {
+const unitsToCheck = [
+  ...dayDirs.map((dir, index) => [dir, `day_${String(index + 1).padStart(2, '0')}_complete.ipynb`, `day_${String(index + 1).padStart(2, '0')}.md`]),
+  ...trackUnits,
+];
+
+unitsToCheck.forEach(([dayDir, masterFile, diagramFile]) => {
   const dayRoot = path.join(courseRoot, dayDir);
   const readme = fs.readFileSync(path.join(dayRoot, 'README.md'), 'utf8');
   const actual = fs.readdirSync(path.join(dayRoot, 'notebooks')).filter((file) => file.endsWith('.ipynb')).sort();
-  const masterFile = `day_${String(index + 1).padStart(2, '0')}_complete.ipynb`;
   const masterPath = path.join(dayRoot, masterFile);
   if (!fs.existsSync(masterPath)) errors.push(`${dayDir}: missing ${masterFile}`);
   const documented = [...readme.matchAll(/`([^`]+\.ipynb)`/g)].map((match) => path.basename(match[1])).filter((file) => file !== masterFile).sort((a, b) => a.localeCompare(b));
   if (JSON.stringify(actual) !== JSON.stringify(documented)) errors.push(`${dayDir}: README notebook sequence differs from the folder`);
-  const diagramSource = fs.readFileSync(path.join(courseRoot, 'diagrams', 'source', `day_${String(index + 1).padStart(2, '0')}.md`), 'utf8');
+  const diagramSource = fs.readFileSync(path.join(courseRoot, 'diagrams', 'source', diagramFile), 'utf8');
   const knownDiagrams = new Set([...diagramSource.matchAll(/^##\s+(D\d+)/gm)].map((match) => match[1]));
   actual.forEach((file) => {
     notebookCount += 1;
@@ -59,4 +65,4 @@ if (errors.length) {
   console.error(errors.map((error) => `- ${error}`).join('\n'));
   process.exit(1);
 }
-console.log(`Alignment verified: 5 day notebooks, ${notebookCount} derived lessons, projects and diagram references.`);
+console.log(`Alignment verified: 5 day notebooks, ${trackUnits.length} track notebook(s), ${notebookCount} derived lessons, projects and diagram references.`);

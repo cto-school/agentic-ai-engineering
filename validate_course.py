@@ -11,6 +11,7 @@ ROOT=Path(__file__).parent
 DAYS=[ROOT/f"day_{n:02d}_{slug}" for n,slug in [
     (1,"model_tools_agent"),(2,"knowledge_and_state"),(3,"memory_and_safety"),
     (4,"multi_agent_systems"),(5,"ai_harness")]]
+TRACKS={ROOT/"langchain_track":"langchain_complete.ipynb"}   # optional tracks beside the five days
 
 
 def _tags(cell): return set(cell.get("metadata",{}).get("tags",[]))
@@ -44,11 +45,30 @@ def validate_day_notebooks():
     return sections,cells,live
 
 
+def validate_track_notebooks():
+    """Each track notebook exists, parses, and lists its sections (no exercise or live cell required)."""
+    sections=cells=0
+    for directory,master_file in TRACKS.items():
+        path=directory/master_file
+        if not path.exists(): raise AssertionError(f"Missing track notebook: {path.name}")
+        notebook=json.loads(path.read_text(encoding="utf-8"))
+        files=notebook.get("metadata",{}).get("course",{}).get("generated_from") or []
+        starts=[c for c in notebook["cells"] if "master-section-start" in _tags(c)]
+        if not files or len(starts)!=len(files):
+            raise AssertionError(f"{path.name}: {len(starts)} section starts but {len(files)} section files listed")
+        for cell in notebook["cells"]:
+            if cell["cell_type"]=="code": ast.parse(_python(cell)); cells+=1
+        sections+=len(files)
+    return sections,cells
+
+
 def validate_lesson_notebooks():
     """Derived lesson notebooks match the section list of their day notebook and parse."""
     count=0
-    for index,day in enumerate(DAYS,start=1):
-        master=json.loads((day/f"day_{index:02d}_complete.ipynb").read_text(encoding="utf-8"))
+    masters=[(day,day/f"day_{index:02d}_complete.ipynb") for index,day in enumerate(DAYS,start=1)]
+    masters+=[(directory,directory/master_file) for directory,master_file in TRACKS.items()]
+    for day,master_path in masters:
+        master=json.loads(master_path.read_text(encoding="utf-8"))
         expected=sorted(master["metadata"]["course"]["generated_from"])
         actual=sorted(p.name for p in (day/"notebooks").glob("*.ipynb"))
         if expected!=actual:
@@ -100,16 +120,17 @@ def validate_course_files():
               ROOT/"reference"/"rag_failure_diagnosis.md",ROOT/"exercises"/"README.md",
               ROOT/"diagrams"/"source"/"day_01.md",ROOT/"diagrams"/"source"/"day_02.md",
               ROOT/"diagrams"/"source"/"day_03.md",ROOT/"diagrams"/"source"/"day_04.md",
-              ROOT/"diagrams"/"source"/"day_05.md"]
+              ROOT/"diagrams"/"source"/"day_05.md",ROOT/"diagrams"/"source"/"langchain.md"]
     required += [day/"theory.md" for day in DAYS]
+    required += [directory/"README.md" for directory in TRACKS]
     missing=[str(p.relative_to(ROOT)) for p in required if not p.exists()]
     if missing: raise AssertionError(f"Missing course files: {missing}")
     return len(required)
 
 
 if __name__=="__main__":
-    sections,cells,live=validate_day_notebooks(); lessons=validate_lesson_notebooks(); python_files=validate_python(); (tests,skipped)=run_plain_tests(); docs=validate_course_files()
-    print(f"PASS: 5 day notebooks with {sections} sections and {cells} code cells, {lessons} derived lesson notebooks, {live} live-observation cells, {python_files} Python files, {tests} executed tests, {docs} key documents")
+    sections,cells,live=validate_day_notebooks(); track_sections,track_cells=validate_track_notebooks(); lessons=validate_lesson_notebooks(); python_files=validate_python(); (tests,skipped)=run_plain_tests(); docs=validate_course_files()
+    print(f"PASS: 5 day notebooks with {sections} sections and {cells} code cells, {len(TRACKS)} track notebook(s) with {track_sections} sections and {track_cells} code cells, {lessons} derived lesson notebooks, {live} live-observation cells, {python_files} Python files, {tests} executed tests, {docs} key documents")
     if skipped:
         print("WARN: install requirements.txt to execute skipped test modules:")
         for item in skipped: print(" -",item)

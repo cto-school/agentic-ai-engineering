@@ -427,5 +427,159 @@
     ],
     "takeaway": "Policy asks whether this kind of action may happen; guardrails ask what only this application can know.",
     "notebook": "Watch the tick stop at pending_approval with the website file still missing, and the poisoned feed refused by propose_update before anything is drafted. In the last cell, publish_update downgraded to write completes with nobody asked."
+  },
+  "01_plain_model_call.ipynb": {
+    "idea": "A LangChain chat model is an object with invoke() and stream(). Your program sends a list of typed messages and receives one AIMessage with the text and the token usage. Nothing is remembered between calls.",
+    "example": "Like a helpdesk where a different person answers every call: you repeat the whole story each time or they cannot help you.",
+    "steps": [
+      "Create the model with make_model() (ChatOpenAI pointed at OpenRouter, or the mock).",
+      "Send SystemMessage and HumanMessage objects with invoke(), or watch chunks arrive with stream().",
+      "Send a fact, then ask about it in a fresh call and see it forgotten."
+    ],
+    "takeaway": "The model generates text; your program supplies the memory, the tools and the limits.",
+    "notebook": "Compare call 2 and call 3 in Step 3: they differ only in which messages your code sent."
+  },
+  "02_tool_calling_by_hand.ipynb": {
+    "idea": "A tool is a Python function the model can request but never execute. The model replies with tool_calls; your code runs the function, sends the result back as a ToolMessage, and asks again. Repeating that until the model answers is the whole agent loop.",
+    "example": "A manager who cannot leave the office asks an assistant to fetch a file. The manager decides what to fetch; the assistant does the fetching and reports back.",
+    "steps": [
+      "Define calculate with @tool and inspect the name, description and argument schema the model will see.",
+      "Bind the tool and observe an AIMessage with empty content and a tool_calls list.",
+      "Execute the call, append the ToolMessage, call the model again; then wrap it in a loop with a step limit."
+    ],
+    "takeaway": "The model emits a request; the application executes it. That boundary is where all later safety lives.",
+    "notebook": "Print ai.tool_calls in Step 2 and the roles list at the end of Step 4: system, human, ai, tool, ai."
+  },
+  "03_first_agent.ipynb": {
+    "idea": "create_agent() packages the hand-written loop as a compiled LangGraph graph with a model node and a tools node. You give it a model, tools and a system prompt; it returns a state whose messages hold the whole trajectory.",
+    "example": "A chain is a recipe followed in order; an agent is a cook who decides which step comes next after tasting the dish.",
+    "steps": [
+      "Define four small tools over fake CRM, order and weather data.",
+      "Create OpsPilot with create_agent() and invoke it with a question that needs two tools.",
+      "Read the trajectory with show_messages() and print the graph's nodes."
+    ],
+    "takeaway": "An agent chooses the order of steps at run time; that flexibility is why it needs limits, logs and approvals later.",
+    "notebook": "Compare the parallel tool calls in Step 2 with the dependent order-then-customer calls in Step 3."
+  },
+  "04_production_ready_tools.ipynb": {
+    "idea": "A tool is an API boundary. Good tools have precise descriptions, typed and validated arguments, error values instead of exceptions, and a clear read-or-write classification.",
+    "example": "A bank counter has a form for each request: the form says what it is for, rejects missing fields, and some forms need a manager's signature.",
+    "steps": [
+      "Replace eval with an AST-based calculator and watch an injection attempt fail.",
+      "Add a Pydantic args_schema with a validator so bad ids never reach the CRM.",
+      "Run the same question with a vaguely described tool and a precise one; then define the first write tool."
+    ],
+    "takeaway": "Tool descriptions are prompt engineering, and write tools need a different policy from read tools.",
+    "notebook": "In Step 3 the function body is identical; only the description changed the agent's behaviour."
+  },
+  "05_structured_output.ipynb": {
+    "idea": "response_format makes the agent end its run by producing an object that matches a Pydantic schema. ToolStrategy implements this as one more tool call, so it works on any tool-calling model; the validated object appears as structured_response.",
+    "example": "Instead of a free-text note saying 'customer seems upset about a charge', the agent fills in a ticket form with fixed fields the ticketing system can route on.",
+    "steps": [
+      "Define SupportTicket with Literal fields and descriptions.",
+      "Create a classifier agent with response_format=ToolStrategy(SupportTicket).",
+      "Feed the returned object into a plain routing function."
+    ],
+    "takeaway": "Natural language goes in; a validated object comes out; business logic never parses prose.",
+    "notebook": "Print type(ticket) in Step 1: it is a Pydantic object, not a string."
+  },
+  "06_conversation_memory.ipynb": {
+    "idea": "A checkpointer saves the agent state after every step under a thread id. Invoking the same thread again loads the saved messages first, which is what makes a conversation. Different thread ids are fully isolated.",
+    "example": "A support desk keeps one file per case number: whoever picks up the case reads the file first. A new case number starts an empty file.",
+    "steps": [
+      "Create the agent with checkpointer=InMemorySaver() and invoke it twice with the same thread id.",
+      "Invoke a different thread id and read the state with get_state().",
+      "Add SummarizationMiddleware and watch the stored history stay small."
+    ],
+    "takeaway": "Short-term memory is the thread; it is not the same as memory about the user.",
+    "notebook": "Turn 2 answers from turn 1's facts; the priya thread knows nothing."
+  },
+  "07_long_term_memory.ipynb": {
+    "idea": "A store holds facts about a user across conversations, keyed by namespace. Tools reach it through ToolRuntime, which also carries the per-run context (user id, role) that the application sets and the model cannot spoof.",
+    "example": "A regular customer's preferences are on file at the shop, not in today's conversation; any assistant who serves them can read the file.",
+    "steps": [
+      "Declare a Context dataclass and pass context_schema and store to create_agent.",
+      "Write remember_preference and recall_preferences tools that use runtime.store and runtime.context.",
+      "Remember in one thread, recall in another, and confirm another user sees nothing."
+    ],
+    "takeaway": "State, short-term memory, long-term memory and knowledge are four different things; keep them separate.",
+    "notebook": "The store contents printed at the end are keyed by ('preferences', user_id), not by thread."
+  },
+  "08_knowledge_rag.ipynb": {
+    "idea": "Retrieval gives the agent company knowledge without putting every document in every prompt: documents are split, embedded and stored once; at query time a retriever returns the nearest chunks. The same retriever serves a fixed 2-step pipeline or an agent's search tool.",
+    "example": "A librarian does not read you the whole library; they bring the three pages most likely to answer your question.",
+    "steps": [
+      "Create policy documents inline, split them, embed them and build an InMemoryVectorStore with a retriever.",
+      "Run 2-step RAG: retrieve, then answer only from the excerpts.",
+      "Wrap the retriever as search_policies and let OpsPilot combine CRM data with policy."
+    ],
+    "takeaway": "2-step RAG is predictable and cheap; agentic RAG is for questions that need several lookups or reasoning in between.",
+    "notebook": "In Step 1 the retriever finds the refund window for a question that shares no words with the chunk."
+  },
+  "09_research_and_planning.ipynb": {
+    "idea": "Multi-step questions need several searches and a synthesis. The plain agent loop plans implicitly; a planner that produces a structured plan plus an executor that runs each step plans explicitly. Industry systems mix both.",
+    "example": "One researcher just starts reading and follows leads; another writes a three-point plan first and ticks it off. Both can work; only the second can show you the plan before starting.",
+    "steps": [
+      "Build web_search and fetch_page over a tiny in-notebook web.",
+      "Run the research agent and read its search, fetch, fetch, fetch, answer trajectory.",
+      "Produce a ResearchPlan with structured output, execute each step, and synthesise."
+    ],
+    "takeaway": "Explicit plans cost more calls but give you inspectable, limitable and resumable stages.",
+    "notebook": "Count the fetch_page calls in Step 2 and compare with the plan's steps in Step 3."
+  },
+  "10_middleware_guardrails_permissions.ipynb": {
+    "idea": "Middleware runs around the model call and around each tool call. It is where logging, call limits, retries, fallbacks and authorisation live, outside the prompt. Prompting is not authorisation.",
+    "example": "An office building has a badge reader, a visitor log and a fire limit on every floor; none of them depend on visitors being polite.",
+    "steps": [
+      "Write a wrap_tool_call logger and add ModelCallLimit and ToolCallLimit middleware.",
+      "Add ToolRetryMiddleware for a flaky tool and ModelFallbackMiddleware for a failing model.",
+      "Filter tools by role in wrap_model_call, guard writes in wrap_tool_call, then feed the agent a poisoned document."
+    ],
+    "takeaway": "Retrieved text and tool output are data, not instructions; guardrails belong at the tool boundary.",
+    "notebook": "Step 5 shows the naive agent obeying the injected instruction and the guarded agent blocking it."
+  },
+  "11_human_in_the_loop.ipynb": {
+    "idea": "HumanInTheLoopMiddleware pauses the run before listed tools execute. Because the state is checkpointed, the pause can last as long as needed and the run resumes exactly there with the human's approve, edit or reject decision.",
+    "example": "A junior clerk prepares the refund form; a manager signs it, corrects the amount, or sends it back. The clerk never touches the money.",
+    "steps": [
+      "Configure interrupt_on so reads are automatic and refund_customer needs approval.",
+      "Invoke the agent and inspect result['__interrupt__'].",
+      "Resume with Command(resume=...) three times: approve, reject with a message, and edit the arguments."
+    ],
+    "takeaway": "Safety is implemented architecturally, with a pause the model cannot skip, not with 'be careful' in the prompt.",
+    "notebook": "The refund ledger changes only after approve and edit; the rejection leaves it unchanged."
+  },
+  "12_langgraph_workflow.ipynb": {
+    "idea": "When a process has a fixed shape, declare it as a LangGraph: typed state, node functions, conditional edges, a checkpointer for persistence and interrupt() to pause inside a node. create_agent is itself such a graph.",
+    "example": "A ticket at a service desk follows a printed flowchart: classify, look up, draft, get approval, send. Nobody improvises the order.",
+    "steps": [
+      "Define TicketState and six small node functions, mixing model calls and plain Python.",
+      "Wire START, conditional edges and END, compile with InMemorySaver, run to the approval pause.",
+      "Resume with Command(resume=True) and list the checkpoints with get_state_history()."
+    ],
+    "takeaway": "Use an explicit graph when the steps are known in advance; use create_agent when the model should choose them.",
+    "notebook": "The state history shows the run resuming from the approve node, not from the start."
+  },
+  "13_multi_agent.ipynb": {
+    "idea": "The simplest multi-agent pattern wraps each specialist agent in a @tool and gives those tools to a supervisor agent. The supervisor delegates self-contained questions and combines the answers without seeing the specialists' inner tools.",
+    "example": "A front-desk agent forwards the billing part of your question to the billing desk and the policy part to the policy desk, then writes you one reply.",
+    "steps": [
+      "Create a billing specialist and a policy specialist with create_agent.",
+      "Wrap each in a tool and build the supervisor.",
+      "Compare total model calls with a single agent that owns all the tools."
+    ],
+    "takeaway": "Split into agents only at a real boundary (tools, permissions, prompts, owners); otherwise one agent is cheaper and easier to debug.",
+    "notebook": "Step 3 prints the supervisor's calls plus the specialists' calls next to the single agent's count."
+  },
+  "14_streaming_observability_production.ipynb": {
+    "idea": "Streaming shows progress while the agent works; a trace records every model and tool call with timings and token usage; the assembled OpsPilot stacks all the earlier layers into one agent whose shape matches production systems.",
+    "example": "A delivery app shows each stage of the order, keeps a full log of who did what, and adds up the cost per delivery.",
+    "steps": [
+      "Stream with stream_mode='updates' and stream_mode='messages'.",
+      "Record a trace with a class-based middleware and estimate the cost per request.",
+      "Assemble the final OpsPilot with all middleware, persistence, store and approval, and run one request end to end."
+    ],
+    "takeaway": "Before building, ask whether the problem should be an agent at all; if the steps are known, a workflow is cheaper, faster and safer.",
+    "notebook": "The final run pauses for approval, then prints the trajectory, the trace and the ledger entry."
   }
 }

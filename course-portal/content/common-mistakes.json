@@ -37,5 +37,19 @@
   "05_events_logs_and_checkpoints.ipynb": "Assuming a complete event log is enough to resume a paused run.",
   "06_mcp_client.ipynb": "Trusting a tool more because a real server, rather than a fake one, advertised it.",
   "07_project_mini_harness.ipynb": "Putting a new agent's behaviour into the runtime instead of into a configuration file.",
-  "08_project_website_maintenance_agent.ipynb": "Believing a daily schedule is the agentic part, or that a plausible-looking feed can be treated as instructions."
+  "08_project_website_maintenance_agent.ipynb": "Believing a daily schedule is the agentic part, or that a plausible-looking feed can be treated as instructions.",
+  "01_plain_model_call.ipynb": "Expecting the model to remember an earlier invoke() call when those messages were not sent again.",
+  "02_tool_calling_by_hand.ipynb": "Believing the model runs the tool; it only emits a request that your code chooses to execute.",
+  "03_first_agent.ipynb": "Reading only the last message and ignoring the trajectory that shows which tools were chosen and why.",
+  "04_production_ready_tools.ipynb": "Treating the docstring as a comment for humans rather than the interface the model reads.",
+  "05_structured_output.ipynb": "Asking for JSON in the prompt and parsing the prose instead of using response_format with a schema.",
+  "06_conversation_memory.ipynb": "Forgetting the thread id in config, so every call silently starts a new conversation.",
+  "07_long_term_memory.ipynb": "Storing user facts in the thread checkpoint, where they vanish when the conversation ends.",
+  "08_knowledge_rag.ipynb": "Assuming the model knows the documents; without retrieval it answers from general knowledge.",
+  "09_research_and_planning.ipynb": "Letting a research loop run without a step limit, so one confused search becomes twenty.",
+  "10_middleware_guardrails_permissions.ipynb": "Relying on the system prompt to enforce permissions instead of filtering and guarding tools.",
+  "11_human_in_the_loop.ipynb": "Using human approval without a checkpointer, so there is nothing to resume from.",
+  "12_langgraph_workflow.ipynb": "Building a graph node that returns the whole state instead of only the keys it changed.",
+  "13_multi_agent.ipynb": "Adding specialists because they sound sophisticated, then paying three agents' worth of calls for one answer.",
+  "14_streaming_observability_production.ipynb": "Shipping an agent without traces, so 'why did it refund this customer?' cannot be answered."
 }
