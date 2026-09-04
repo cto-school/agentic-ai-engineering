@@ -13,6 +13,8 @@ from urllib.parse import urlparse
 from uuid import uuid4
 
 from .events import EventStore
+from .registry import ToolRegistry
+from .schemas import AgentConfig, ModelConfig, ToolSpec
 
 
 INJECTION_PATTERNS = (
@@ -145,9 +147,26 @@ class WebsiteGuardrails:
 
 
 def deterministic_proposer(item: UpdateItem) -> UpdateProposal:
-    """Offline proposal used for tests and outage fallback."""
+    """Offline proposal used for tests and outage fallback.
+
+    Be honest about what this is: it copies the cleaned-up source summary
+    verbatim. There is NO model call on this path and no summarisation happens.
+    Its job is to make the harness, guardrails and approval flow reproducible
+    with zero credit. `OpenRouterWebsiteProposer` is the version that actually
+    asks a model to write the update.
+    """
     clean = " ".join(item.summary.split())[:500]
     return UpdateProposal(item.item_id, "content/updates.md", item.title, clean, item.url)
+
+
+def apply_proposal(site_root: str | Path, proposal: UpdateProposal) -> Path:
+    """Append one approved proposal to the website file and return the path written."""
+    target = (Path(site_root).resolve() / proposal.target_path).resolve()
+    target.parent.mkdir(parents=True, exist_ok=True)
+    existing = target.read_text(encoding="utf-8") if target.exists() else "# Updates\n"
+    block = f"\n## {proposal.heading}\n\n{proposal.body}\n\nSource: {proposal.source_url}\n"
+    target.write_text(existing.rstrip() + "\n" + block, encoding="utf-8")
+    return target
 
 
 class OpenRouterWebsiteProposer:
@@ -244,11 +263,7 @@ class WebsiteMaintenanceAgent:
         failures = self.guardrails.check_source(item) + self.guardrails.check_proposal(proposal, item)
         if failures:
             return MaintenanceResult(run_id, "blocked", "Guardrails changed or failed before execution.", proposal)
-        target = (self.guardrails.site_root / proposal.target_path).resolve()
-        target.parent.mkdir(parents=True, exist_ok=True)
-        existing = target.read_text(encoding="utf-8") if target.exists() else "# Updates\n"
-        block = f"\n## {proposal.heading}\n\n{proposal.body}\n\nSource: {proposal.source_url}\n"
-        target.write_text(existing.rstrip() + "\n" + block, encoding="utf-8")
+        target = apply_proposal(self.guardrails.site_root, proposal)
         if proposal.source_url not in target.read_text(encoding="utf-8"):
             return MaintenanceResult(run_id, "failed", "Post-write verification failed.", proposal)
         current["processed_ids"].append(item.item_id)
@@ -258,3 +273,99 @@ class WebsiteMaintenanceAgent:
         self.events.add(run_id, "website_updated", target=str(target))
         self.events.add(run_id, "verification_passed")
         return MaintenanceResult(run_id, "completed", str(target), proposal)
+
+
+# ---------------------------------------------------------------------------
+# Harness bridge: the same two actions, exposed as registered harness tools.
+#
+# `WebsiteMaintenanceAgent` above is the hand-written workflow. Everything below
+# gives the *harness* the same job: two tools in a ToolRegistry, driven by
+# HarnessRuntime, permitted by policy.decide, recorded by EventStore and paused
+# on a checkpoint. WebsiteGuardrails stays the domain check inside each tool.
+# ---------------------------------------------------------------------------
+
+PROPOSE_UPDATE_SCHEMA = {
+    "type": "object",
+    "properties": {"item_id": {"type": "string"}},
+    "required": ["item_id"],
+    "additionalProperties": False,
+}
+
+
+def build_website_registry(source, proposer, guardrails: "WebsiteGuardrails",
+                           state: "JSONStateStore") -> ToolRegistry:
+    """Register the website actions as harness tools with honest risk levels.
+
+    propose_update -> risk "write"    : reversible, stays on this machine.
+    publish_update -> risk "external" : changes the site, so policy pauses it.
+    """
+
+    def _find(item_id: str) -> UpdateItem:
+        for item in source.fetch():
+            if item.item_id == item_id:
+                return item
+        raise ValueError(f"No source item has id {item_id!r}")
+
+    def propose_update(item_id: str) -> dict:
+        """Draft a website patch and store it; never touches the website."""
+        item = _find(item_id)
+        blocked = guardrails.check_source(item)          # input guardrail
+        if blocked:
+            raise ValueError("input guardrail blocked the source: " + "; ".join(blocked))
+        proposal = proposer(item)
+        blocked = guardrails.check_proposal(proposal, item)  # output guardrail
+        if blocked:
+            raise ValueError("output guardrail blocked the proposal: " + "; ".join(blocked))
+        current = state.load()
+        current["pending"][item_id] = {"proposal": asdict(proposal), "item": asdict(item)}
+        state.save(current)
+        return {"item_id": item_id, "heading": proposal.heading,
+                "target_path": proposal.target_path, "guardrails_passed": True,
+                "website_changed": False}
+
+    def publish_update(item_id: str) -> dict:
+        """Write the stored patch to the website. Only reachable after approval."""
+        current = state.load()
+        pending = current["pending"].get(item_id)
+        if not pending:
+            raise ValueError(f"No stored proposal for {item_id!r}; run propose_update first")
+        proposal = UpdateProposal(**pending["proposal"])
+        item = UpdateItem(**pending["item"])
+        # Re-check right before the side effect: the world may have changed while paused.
+        blocked = guardrails.check_source(item) + guardrails.check_proposal(proposal, item)
+        if blocked:
+            raise ValueError("guardrail re-check failed at publish time: " + "; ".join(blocked))
+        target = apply_proposal(guardrails.site_root, proposal)
+        if proposal.source_url not in target.read_text(encoding="utf-8"):
+            raise ValueError("post-write verification failed")
+        current["processed_ids"].append(item_id)
+        current["pending"].pop(item_id)
+        current["last_success_at"] = datetime.now(timezone.utc).isoformat()
+        state.save(current)
+        return {"item_id": item_id, "website_changed": True, "target": str(target)}
+
+    registry = ToolRegistry()
+    registry.register(ToolSpec("propose_update", "Draft a website update from one source item",
+                               PROPOSE_UPDATE_SCHEMA, "write"), propose_update)
+    registry.register(ToolSpec("publish_update", "Write an approved update to the website",
+                               PROPOSE_UPDATE_SCHEMA, "external"), publish_update)
+    return registry
+
+
+def website_agent_config(max_steps: int = 4) -> AgentConfig:
+    """The agent configuration that drives the two website tools in mock mode.
+
+    The mock_plan says: propose first, then publish. Policy will allow step 1 and
+    pause step 2, which is exactly the behaviour we want a student to observe.
+    """
+    return AgentConfig(
+        name="website_agent",
+        instructions="Propose one website update from supplied evidence, then request publication.",
+        allowed_tools=["propose_update", "publish_update"],
+        max_steps=max_steps,
+        model=ModelConfig(provider="mock", model="mock-deterministic"),
+        mock_plan=[
+            {"tool": "propose_update", "arguments": {"item_id": "{prompt}"}},
+            {"tool": "publish_update", "arguments": {"item_id": "{prompt}"}},
+        ],
+    )

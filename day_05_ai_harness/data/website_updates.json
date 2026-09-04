@@ -5,5 +5,12 @@
     "url": "https://github.com/example/course/releases/tag/v2",
     "summary": "The Friday engineering lab now begins at 10:30. Students should bring their project checklist.",
     "published_at": "2026-08-14T09:00:00Z"
+  },
+  {
+    "item_id": "course-release-3",
+    "title": "Project Submission Portal Opens",
+    "url": "https://github.com/example/course/releases/tag/v3",
+    "summary": "The capstone submission portal opens on Monday and closes at 17:00 on Friday. Late entries need mentor approval.",
+    "published_at": "2026-08-21T09:00:00Z"
   }
 ]

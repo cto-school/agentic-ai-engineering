@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from pydantic import ValidationError
 
 from .providers import ModelProvider
@@ -81,7 +83,12 @@ class AgentRunner:
                 )
 
             for call in turn.tool_calls:
-                signature = (call.name, call.model_dump_json())
+                # The signature must describe WHAT was requested, not WHICH request
+                # object carried it. Providers give every tool call a fresh random id,
+                # so including call.id here would make each signature unique and the
+                # duplicate check could never fire. Sorting the argument keys makes
+                # {"a": 1, "b": 2} and {"b": 2, "a": 1} the same signature.
+                signature = (call.name, json.dumps(call.arguments, sort_keys=True))
                 if signature in seen_calls:
                     return AgentResult(
                         status="failed",

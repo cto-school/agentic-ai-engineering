@@ -16,6 +16,6 @@ __pycache__/
 .ipynb_checkpoints/
 .langgraph_api/
 .DS_Store
-data/generated/
+**/data/generated/
 artifacts/
 tmp/

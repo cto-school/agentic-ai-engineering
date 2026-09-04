@@ -1,0 +1,141 @@
+{
+  "note": "Captured offline with MockStructuredReviewer (no model was called). Used by notebook 06 when no API key is available. Regenerate with: python evaluate_project.py --write",
+  "source": "day_04_multi_agent_systems/evaluate_project.py",
+  "provider": "MockStructuredReviewer",
+  "price_per_million_tokens": 0.15,
+  "scenarios": {
+    "blind_spots": [
+      {
+        "system": "single_reviewer",
+        "known_defects": 9,
+        "found": 5,
+        "recall": 0.556,
+        "false_positives": 0,
+        "duplicates": 0,
+        "merged_duplicates": 0,
+        "dropped_over_cap": 0,
+        "raw_findings": 5,
+        "reported_findings": 5,
+        "model_calls": 1,
+        "tokens": 464,
+        "elapsed_ms": 0.1,
+        "cost_usd": 0.0,
+        "estimated_cost_usd": 7e-05,
+        "missed": [
+          "DEF-COR-01",
+          "DEF-COR-02",
+          "DEF-MNT-02",
+          "DEF-SEC-04"
+        ],
+        "false_positive_ids": []
+      },
+      {
+        "system": "checks_plus_reviewer",
+        "known_defects": 9,
+        "found": 6,
+        "recall": 0.667,
+        "false_positives": 0,
+        "duplicates": 0,
+        "merged_duplicates": 2,
+        "dropped_over_cap": 0,
+        "raw_findings": 8,
+        "reported_findings": 6,
+        "model_calls": 1,
+        "tokens": 464,
+        "elapsed_ms": 0.5,
+        "cost_usd": 0.0,
+        "estimated_cost_usd": 7e-05,
+        "missed": [
+          "DEF-COR-01",
+          "DEF-COR-02",
+          "DEF-SEC-04"
+        ],
+        "false_positive_ids": []
+      },
+      {
+        "system": "specialist_team",
+        "known_defects": 9,
+        "found": 9,
+        "recall": 1.0,
+        "false_positives": 0,
+        "duplicates": 0,
+        "merged_duplicates": 3,
+        "dropped_over_cap": 0,
+        "raw_findings": 12,
+        "reported_findings": 9,
+        "model_calls": 3,
+        "tokens": 1122,
+        "elapsed_ms": 0.4,
+        "cost_usd": 0.0,
+        "estimated_cost_usd": 0.000168,
+        "missed": [],
+        "false_positive_ids": []
+      }
+    ],
+    "strong_generalist": [
+      {
+        "system": "single_reviewer",
+        "known_defects": 9,
+        "found": 8,
+        "recall": 0.889,
+        "false_positives": 0,
+        "duplicates": 0,
+        "merged_duplicates": 0,
+        "dropped_over_cap": 0,
+        "raw_findings": 8,
+        "reported_findings": 8,
+        "model_calls": 1,
+        "tokens": 599,
+        "elapsed_ms": 0.1,
+        "cost_usd": 0.0,
+        "estimated_cost_usd": 9e-05,
+        "missed": [
+          "DEF-COR-02"
+        ],
+        "false_positive_ids": []
+      },
+      {
+        "system": "checks_plus_reviewer",
+        "known_defects": 9,
+        "found": 8,
+        "recall": 0.889,
+        "false_positives": 0,
+        "duplicates": 0,
+        "merged_duplicates": 3,
+        "dropped_over_cap": 0,
+        "raw_findings": 11,
+        "reported_findings": 8,
+        "model_calls": 1,
+        "tokens": 599,
+        "elapsed_ms": 0.5,
+        "cost_usd": 0.0,
+        "estimated_cost_usd": 9e-05,
+        "missed": [
+          "DEF-COR-02"
+        ],
+        "false_positive_ids": []
+      },
+      {
+        "system": "specialist_team",
+        "known_defects": 9,
+        "found": 8,
+        "recall": 0.889,
+        "false_positives": 0,
+        "duplicates": 0,
+        "merged_duplicates": 3,
+        "dropped_over_cap": 0,
+        "raw_findings": 11,
+        "reported_findings": 8,
+        "model_calls": 3,
+        "tokens": 1077,
+        "elapsed_ms": 0.4,
+        "cost_usd": 0.0,
+        "estimated_cost_usd": 0.000162,
+        "missed": [
+          "DEF-COR-02"
+        ],
+        "false_positive_ids": []
+      }
+    ]
+  }
+}

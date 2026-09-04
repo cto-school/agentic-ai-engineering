@@ -38,33 +38,12 @@ const days = [
   { dir: 'day_02_knowledge_and_state', short: 'Knowledge', title: 'Knowledge, RAG & State', project: 'Engineering Knowledge Assistant', projectLesson: 8, prerequisite: 'Uses the model-call and tool-loop ideas from Day 1. Retrieval itself is introduced from first principles.', projectBrief: 'You will build an assistant that searches supplied engineering documents, assembles relevant evidence, answers with citations, and clearly abstains when the collection cannot support an answer.', projectFlow: ['Prepare labelled document chunks', 'Compare keyword and semantic retrieval', 'Assemble bounded RAG context', 'Answer with evidence or abstain'], color: '#41b3a3' },
   { dir: 'day_03_memory_and_safety', short: 'Safety', title: 'Memory, Guardrails & Safety', project: 'Safe Personal Task Agent', projectLesson: 9, prerequisite: 'Uses the visible state and tool execution boundaries developed on Days 1 and 2.', projectBrief: 'You will build a task agent that can retain selected preferences, form a small plan, propose real actions, wait for approval, and leave a trace showing exactly why an action ran or was blocked.', projectFlow: ['Manage conversation context', 'Store only useful long-term memory', 'Separate plans from execution', 'Apply guardrails, approval, and evaluation'], color: '#7a6ff0' },
   { dir: 'day_04_multi_agent_systems', short: 'Coordination', title: 'Multi-Agent Systems', project: 'Engineering Design Review Team', projectLesson: 7, prerequisite: 'Assumes you can build and evaluate one bounded agent. The day begins by measuring that simpler baseline.', projectBrief: 'You will compare one reviewer with a coordinated review team: deterministic checks and focused specialists produce findings that a supervisor merges into an evidence-backed engineering report.', projectFlow: ['Define a measurable review task', 'Establish a single-agent baseline', 'Add genuinely distinct specialists', 'Merge and evaluate quality, cost, and latency'], color: '#de9e36' },
-  { dir: 'day_05_ai_harness', short: 'Runtime', title: 'Harness & Automation', project: 'Mini Harness + Website Maintenance Agent', projectLesson: 7, prerequisite: 'Consolidates the model, tool, knowledge, memory, safety, and coordination boundaries built during Days 1–4.', projectBrief: 'You will first package the repeated controls into a reusable mini harness, then use that harness in a website-maintenance workflow that checks updates, proposes a change, applies policy, pauses for approval, and records the run.', projectFlow: ['Separate configuration from runtime', 'Govern tools and resource limits', 'Add events, checkpoints, and MCP', 'Run an end-to-end automated maintenance cycle'], color: '#3085c3' },
+  { dir: 'day_05_ai_harness', short: 'Runtime', title: 'Harness & Automation', project: 'Mini Harness + Website Maintenance Agent', projectLesson: 9, prerequisite: 'Consolidates the model, tool, knowledge, memory, safety, and coordination boundaries built during Days 1–4.', projectBrief: 'You will first package the repeated controls into a reusable mini harness, then use that harness in a website-maintenance workflow that checks updates, proposes a change, applies policy, pauses for approval, and records the run.', projectFlow: ['Separate configuration from runtime', 'Govern tools and resource limits', 'Add events, checkpoints, and MCP', 'Run an end-to-end automated maintenance cycle'], color: '#3085c3' },
 ];
 
 function plainTitle(source, fallback) {
   const match = source.match(/^#\s+(.+)$/m);
   return match ? match[1].replace(/[*`]/g, '').trim() : fallback;
-}
-
-function description(markdown) {
-  const paragraphs = markdown
-    .split(/\n\s*\n/)
-    .map((part) => part.replace(/^#+\s+.*$/gm, '').replace(/[*`>#-]/g, '').replace(/\s+/g, ' ').trim())
-    .filter((part) => part.length > 40 && !part.startsWith('Architecture reference'));
-  return (paragraphs[0] || 'Interactive course notebook').slice(0, 180);
-}
-
-function lessonReading(markdown, summary) {
-  const parts = markdown.replace(/^#\s+.+?\r?\n+/, '').split(/\n\s*\n/);
-  const firstBody = parts.findIndex((part) => {
-    const plain = part.replace(/^#+\s+.*$/gm, '').replace(/[*`>#-]/g, '').replace(/\s+/g, ' ').trim();
-    return plain.length > 40 && !plain.startsWith('Architecture reference');
-  });
-  if (firstBody >= 0) {
-    const plain = parts[firstBody].replace(/[*`>#-]/g, '').replace(/\s+/g, ' ').trim();
-    if (plain.startsWith(summary) || summary.startsWith(plain.slice(0, 160))) parts.splice(firstBody, 1);
-  }
-  return parts.join('\n\n').replace(/^\s*---\s*/, '').trim();
 }
 
 function diagramCatalog(dayNumber) {
@@ -74,25 +53,35 @@ function diagramCatalog(dayNumber) {
   const pattern = /^##\s+(D\d+)\s+—\s+(.+?)\s*$[\s\S]*?```mermaid\s*\n([\s\S]*?)```/gm;
   for (const match of source.matchAll(pattern)) {
     const mermaid = match[3].trim();
+    const tail = source.slice(match.index + match[0].length).split(/^##\s/m)[0];
+    const textAlternative = tail.match(/Text alternative:\s*(.+)/)?.[1]?.trim() || '';
     const labels = new Map();
-    for (const node of mermaid.matchAll(/([A-Za-z][A-Za-z0-9_]*)\s*(?:\[|\{|\()+(?:\"?)([^\]})\"]+)(?:\"?)(?:\]|\}|\))+/g)) labels.set(node[1], node[2]);
+    for (const node of mermaid.matchAll(/([A-Za-z][A-Za-z0-9_]*)\s*(?:\[|\{|\()+"?([^\]})"]+)"?(?:\]|\}|\))+/g)) labels.set(node[1], node[2]);
     for (const participant of mermaid.matchAll(/^\s*participant\s+([A-Za-z][A-Za-z0-9_]*)\s+as\s+(.+)$/gm)) labels.set(participant[1], participant[2].trim());
     const edges = [];
     for (const line of mermaid.split('\n')) {
-      const sequence = line.match(/^\s*([A-Za-z][A-Za-z0-9_]*)\s*-+>>\s*([A-Za-z][A-Za-z0-9_]*)\s*:/);
-      if (sequence) { edges.push({ from: sequence[1], to: sequence[2] }); continue; }
-      const parts = line.trim().split(/-->(?:\|[^|]*\|)?/);
-      if (parts.length < 2) continue;
-      const ids = parts.map((part) => part.match(/([A-Za-z][A-Za-z0-9_]*)/)?.[1]).filter(Boolean);
-      for (let index = 0; index < ids.length - 1; index += 1) edges.push({ from: ids[index], to: ids[index + 1] });
+      const sequence = line.match(/^\s*([A-Za-z][A-Za-z0-9_]*)\s*-+>>\s*([A-Za-z][A-Za-z0-9_]*)\s*:\s*(.*)$/);
+      if (sequence) { edges.push({ from: sequence[1], to: sequence[2], label: sequence[3].trim() }); continue; }
+      if (!line.includes('-->')) continue;
+      // Split a chain such as  A --> B -->|"yes"| C  into labelled hops.
+      const hops = line.trim().split(/-->/);
+      for (let index = 0; index < hops.length - 1; index += 1) {
+        const from = hops[index].match(/([A-Za-z][A-Za-z0-9_]*)/)?.[1];
+        const right = hops[index + 1];
+        const label = right.match(/^\s*\|\s*"?([^"|]*)"?\s*\|/)?.[1]?.trim() || '';
+        const to = right.replace(/^\s*\|[^|]*\|/, '').match(/([A-Za-z][A-Za-z0-9_]*)/)?.[1];
+        if (from && to) edges.push({ from, to, label });
+      }
     }
     if (!labels.size || !edges.length) throw new Error(`Diagram ${match[1]} has no renderable nodes or edges`);
-    entries.push({ id: match[1], title: match[2].trim(), mermaid, nodes: [...labels].map(([id, label]) => ({ id, label })), edges });
+    entries.push({ id: match[1], title: match[2].trim(), mermaid, textAlternative, nodes: [...labels].map(([id, label]) => ({ id, label })), edges });
   }
   return entries;
 }
 
 fs.mkdirSync(outputRoot, { recursive: true });
+
+let setupGuide = '';
 
 const data = days.map((day, dayIndex) => {
   const diagrams = diagramCatalog(dayIndex + 1);
@@ -121,34 +110,29 @@ const data = days.map((day, dayIndex) => {
       const sourcePath = path.join(notebooksDir, file);
       const notebook = JSON.parse(fs.readFileSync(sourcePath, 'utf8'));
       fs.copyFileSync(sourcePath, path.join(destination, file));
-      const markdownCells = notebook.cells.filter((cell) => cell.cell_type === 'markdown');
-      const readable = markdownCells.map((cell) => cell.source.join('')).join('\n\n---\n\n');
-      const summary = description(readable);
+      const cells = notebook.cells
+        .filter((cell) => cell.cell_type === 'markdown' || cell.cell_type === 'code')
+        .map((cell, cellIndex) => ({ id: cellIndex + 1, type: cell.cell_type, source: cell.source.join(''), tags: cell.metadata?.tags || [] }));
+      const markdownCells = cells.filter((cell) => cell.type === 'markdown');
+      const readable = markdownCells.map((cell) => cell.source).join('\n\n');
       const theory = markdownCells
-        .filter((cell) => cell.metadata?.tags?.includes('embedded-course-theory'))
-        .map((cell) => cell.source.join(''))
-        .join('\n\n');
-      const codeCells = notebook.cells.filter((cell) => cell.cell_type === 'code').length;
+        .filter((cell) => cell.tags.includes('embedded-course-theory'))
+        .map((cell) => cell.source.replace(/^##\s+Concept briefing\s*/i, ''))
+        .join('\n\n')
+        .trim();
+      const closingCell = [...markdownCells].reverse().find((cell) => /###\s+(Checkpoint|Recap)|^##\s+Explain/m.test(cell.source));
+      const closing = closingCell ? closingCell.source.trim() : '';
+      const beforeCell = markdownCells.find((cell) => /^##\s+Before you begin/m.test(cell.source));
+      const before = beforeCell ? beforeCell.source.replace(/^##\s+Before you begin\s*/m, '').trim() : '';
+      const setupCell = markdownCells.find((cell) => /^##\s+Setting up your \.env file/m.test(cell.source));
+      if (setupCell && !setupGuide) setupGuide = setupCell.source.trim();
+      const codeCells = cells.filter((cell) => cell.type === 'code').length;
       const guide = lessonGuides[file];
       const mistake = commonMistakes[file];
       if (!guide || !mistake) throw new Error(`Missing beginner guide for ${day.dir}/${file}`);
       const referencedDiagramIds = diagramMap[file] || [];
       const lessonDiagrams = diagrams.filter((diagram) => referencedDiagramIds.includes(diagram.id));
       if (lessonDiagrams.length !== referencedDiagramIds.length) throw new Error(`Missing mapped diagram for ${day.dir}/${file}`);
-      let latestHeading = 'Run this cell';
-      let latestExplanation = '';
-      const codeWalkthrough = [];
-      for (const cell of notebook.cells) {
-        const source = cell.source.join('');
-        if (cell.cell_type === 'markdown') {
-          const heading = [...source.matchAll(/^#{2,4}\s+(.+)$/gm)].at(-1)?.[1];
-          if (heading) latestHeading = heading.replace(/[*`]/g, '').trim();
-          const paragraphs = source.split(/\n\s*\n/).map((part) => part.replace(/^#+\s+.*$/gm, '').replace(/[*`>#-]/g, '').replace(/\s+/g, ' ').trim()).filter((part) => part.length > 35);
-          latestExplanation = paragraphs.at(-1) || '';
-        } else if (cell.cell_type === 'code') {
-          codeWalkthrough.push({ title: latestHeading, explanation: latestExplanation || `This cell implements the “${latestHeading}” stage shown in the lesson flow.`, source });
-        }
-      }
       return {
         id: `${dayIndex + 1}-${notebookIndex + 1}`,
         order: notebookIndex + 1,
@@ -158,26 +142,24 @@ const data = days.map((day, dayIndex) => {
         title: plainTitle(readable, file.replace('.ipynb', '').replaceAll('_', ' ')),
         description: guide.idea,
         guide: { ...guide, mistake },
-        codeWalkthrough,
-        theory: theory || readable,
-        reading: lessonReading(readable, summary),
-        cells: notebook.cells
-          .filter((cell) => cell.cell_type === 'markdown' || cell.cell_type === 'code')
-          .map((cell, cellIndex) => ({
-            id: cellIndex + 1,
-            type: cell.cell_type,
-            source: cell.source.join(''),
-          })),
+        before,
+        theory,
+        closing,
+        cells: cells.map(({ id, type, source }) => ({ id, type, source })),
         diagrams: lessonDiagrams,
         codeCells,
         isExercise: file.includes('_exercise_'),
         isProject: file.includes('_project_'),
-        hasLiveObservation: markdownCells.some((cell) => cell.metadata?.tags?.includes('required-live-observation')),
+        hasLiveObservation: markdownCells.some((cell) => cell.tags.includes('required-live-observation')),
       };
     }),
   };
 });
 
-const out = `export const courseDays = ${JSON.stringify(data, null, 2)} as const;\n`;
+if (!setupGuide) throw new Error('Day 1 Lesson 1 no longer contains the "Setting up your .env file" section');
+
+const out = `// Generated by scripts/build-course-content.mjs. Do not edit by hand; run \`pnpm content\`.\n`
+  + `export const courseDays = ${JSON.stringify(data, null, 2)};\n\n`
+  + `export const setupGuide = ${JSON.stringify(setupGuide)};\n`;
 fs.writeFileSync(path.join(siteRoot, 'app', 'course-data.ts'), out);
 console.log(`Prepared ${data.reduce((sum, day) => sum + day.notebooks.length, 0)} notebooks.`);

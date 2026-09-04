@@ -49,9 +49,14 @@ earned its place.
 
 An embedding converts text into a vector so that a similarity function can rank nearby
 representations. A trained semantic embedding may place paraphrases close together. The
-course's deterministic token-hash embedder is different: it maps token features into a
-stable numeric space for offline orchestration tests. It cannot genuinely understand
-meaning and must not be presented as a production semantic model.
+course's deterministic token-hash embedder is different: it hashes each word into a fixed
+position of a vector, so two texts are close only when they repeat the same words. It is
+keyword matching in vector form, useful because it is stable offline, and it must not be
+presented as a production semantic model.
+
+Comparing the two embedders on the same query is the fastest way to see what a trained
+model adds: the paraphrase that scores zero under word overlap can still rank first under
+semantic similarity.
 
 Similarity answers "which candidates are closest under this representation?" It does
 not prove that a passage is relevant, sufficient or correct. Scores from different
@@ -97,10 +102,14 @@ when the retriever never supplied the answer.
 ## Citations and abstention
 
 A citation should identify evidence the application actually supplied. Asking the model
-to "always cite sources" is insufficient; the host should verify that returned citation
-identifiers correspond to retrieved chunks. When evidence is missing, abstention is a
-successful safety behavior. It tells downstream users that another information source or
-human decision is required.
+to "always cite sources" is insufficient; the host must verify that every returned chunk
+identifier belongs to a chunk it retrieved, and drop the ones that do not. For the same
+reason the application, not the model, decides whether an answer is grounded: a field in
+which the model declares its own answer trustworthy proves nothing.
+
+When evidence is missing, abstention is a successful safety behavior. It tells downstream
+users that another information source or human decision is required. A well formed
+abstention carries no citations at all.
 
 ## Indirect prompt injection begins here
 

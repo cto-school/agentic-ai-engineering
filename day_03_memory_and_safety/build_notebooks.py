@@ -1,5 +1,13 @@
 """Rebuild the Day 3 teaching notebooks from readable cell definitions."""
+
 from __future__ import annotations
+import sys as _sys
+if "--force" not in _sys.argv:  # pragma: no cover
+    raise SystemExit(
+        "ARCHIVED: the notebooks in notebooks/ are hand-maintained and are the source of truth. "
+        "This generator predates the current content and would overwrite it. "
+        "Run with --force only if you intend to regenerate from these definitions."
+    )
 import json
 from pathlib import Path
 

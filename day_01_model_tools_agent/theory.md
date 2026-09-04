@@ -25,6 +25,20 @@ provider how each piece should be interpreted:
 - `assistant`: previous model output, including tool requests;
 - `tool`: an observation produced by host-executed code.
 
+Two request fields deserve names of their own. `temperature` controls how freely the
+model samples its next token: 0 makes it take the most likely continuation every time,
+which is what pipelines and tool selection need; higher values trade reproducibility for
+variety. `max_tokens` bounds only the generated answer, and on reasoning models it is
+spent on private reasoning tokens before any visible output, which is why a small limit
+can truncate a JSON response mid-field.
+
+Everything the model can see in one call - system message, every earlier message, tool
+descriptions and the answer being generated - must fit inside its **context window**, a
+fixed token budget. Nothing carries over between calls: a model is stateless, and the
+appearance of memory comes from the application re-sending the conversation each time.
+This is also why a growing conversation costs more per turn, and why Day 3 has to manage
+history rather than let it accumulate.
+
 The provider serializes this request into a form the model can process. The model sees
 tokens representing instructions, messages and tool descriptions. It does not receive a
 live Python function. When it appears to "call" a tool, it is generating structured

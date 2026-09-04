@@ -1,6 +1,6 @@
 # Pivotal Coding Exercises
 
-Most notebooks are guided builds. These six exercises are deliberately different: students receive a small stub, a behavioural check, and a contract. They must complete the missing decision-making code. Each exercise is a self-contained notebook in the relevant day's `notebooks/` directory, so students do not need to switch between notebook and Python files. The checks are deterministic and use no API credits.
+Most notebooks are guided builds. These six exercises are deliberately different: students receive a small stub, a behavioural check, and a contract. They complete the missing decision-making code, then compare it with the fully commented reference solution that follows the check in the same notebook. The check prints a hint instead of failing while the stub is unfinished. Each exercise is a self-contained notebook in the relevant day's `notebooks/` directory, so students do not need to switch between notebook and Python files. The checks are deterministic and use no API credits.
 
 | Exercise | Introduced | Central idea |
 |---|---|---|

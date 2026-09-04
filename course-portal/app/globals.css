@@ -122,3 +122,48 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 @media (max-width: 760px) { .lesson-toolbar { align-items: stretch; flex-direction: column; } .lesson-actions a { flex: 1; } .top-lesson-nav { width: 100%; margin-top: .35rem; margin-left: 0; justify-content: space-between; } .day-story { grid-template-columns: 1fr; } }
 @media (max-width: 640px) { .lesson-prose { font-size: .98rem; } .lesson-pagination { grid-template-columns: 1fr; } .lesson-pagination > div:last-child { justify-content: flex-start; } }
+
+/* --- Rendered notebook markdown, getting-started page, diagrams -------------------- */
+.lesson-prose h4 { margin: 1.2rem 0 .4rem; color: var(--ink); font-size: 1rem; font-weight: 720; }
+.lesson-prose ol { margin: .8rem 0; max-width: 72ch; padding-left: 1.4rem; }
+.lesson-prose ol li { padding-left: .2rem; }
+.lesson-prose ol li::before { display: none; }
+.lesson-prose blockquote { margin: 1rem 0; border-left: .25rem solid #46a0a0; background: #eef5f3; padding: .6rem 1rem; color: #2f4a52; border-radius: 0 .6rem .6rem 0; }
+.lesson-prose table { display: block; max-width: 100%; overflow-x: auto; margin: 1rem 0; border-collapse: collapse; font-size: .9rem; }
+.lesson-prose th, .lesson-prose td { border: 1px solid var(--line); padding: .45rem .7rem; text-align: left; vertical-align: top; }
+.lesson-prose th { background: #e9efed; font-weight: 720; }
+.lesson-prose details { margin: .6rem 0 1rem; border: 1px solid #c8d99f; border-radius: .7rem; background: #f6fbe9; padding: .55rem .9rem; }
+.lesson-prose details[open] { background: #fbfdf4; }
+.lesson-prose summary { cursor: pointer; color: #3f6b1f; font-weight: 720; }
+.lesson-prose summary::marker { color: #6f9a3b; }
+.lesson-prose details > :not(summary) { margin-left: .25rem; }
+.lesson-prose a { color: var(--teal); text-decoration: underline; text-underline-offset: .15em; }
+.lesson-prose img { max-width: 100%; border-radius: .6rem; }
+.lesson-prose .doc-ref { border-radius: .3rem; background: #e4ebea; padding: .1rem .4rem; color: #174d54; font-size: .9em; font-weight: 650; }
+.lesson-prose h1 { margin: 0 0 .8rem; color: var(--ink); font-size: 1.6rem; font-weight: 780; letter-spacing: -.02em; }
+.section-hint { margin: -.3rem 0 .6rem; color: var(--muted-ink); font-size: .86rem; }
+.concept-briefing { border: 1px solid #c9d9d5; border-radius: 1rem; background: #f8fbfa; padding: 1.1rem 1.3rem; }
+.concept-briefing h2 { margin-bottom: .3rem; }
+.notebook-walkthrough { display: grid; gap: 1.1rem; }
+.notebook-walkthrough .notebook-markdown { max-width: 76ch; }
+.notebook-walkthrough .notebook-markdown h2 { margin-top: 1.4rem; padding-top: 1.2rem; border-top: 1px solid var(--line); }
+.notebook-walkthrough .notebook-markdown:first-child h1 { display: none; }
+.mermaid-canvas { display: flex; justify-content: center; overflow-x: auto; padding: 1.2rem; background: linear-gradient(135deg, #f7faf9, #eef5f3); }
+.mermaid-canvas svg { max-width: 100%; height: auto; }
+.architecture-loading { padding: 1rem 1.15rem; color: var(--muted-ink); font-size: .85rem; }
+.architecture-edge em { display: grid; place-items: center; font-style: normal; font-size: .68rem; color: var(--teal); text-align: center; line-height: 1.1; }
+.architecture-edge em svg { width: 1.1rem; }
+.getting-started .start-hero { border: 1px solid #b9cbc7; border-radius: 1rem; background: linear-gradient(135deg, #fff, #eaf3f1); padding: 1.3rem 1.4rem; max-width: none !important; }
+.start-list { margin: .8rem 0 0; padding: 0; list-style: none; display: grid; gap: .55rem; }
+.start-list li { position: relative; padding-left: 1.35rem; line-height: 1.6; }
+.start-list li::before { position: absolute; left: 0; top: .68rem; width: .45rem; height: .45rem; border-radius: 999px; background: #46a0a0; content: ''; }
+.setup-guide { border: 1px solid #e3d3a8; border-radius: 1rem; background: #fffaf0; padding: 1.1rem 1.3rem; }
+.colab-form { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto; align-items: end; gap: .75rem; margin-top: .8rem; }
+.colab-field { display: grid; gap: .3rem; }
+.colab-field label { font-size: .8rem; font-weight: 700; color: var(--ink); }
+.colab-field label span { font-weight: 500; color: var(--muted-ink); }
+.colab-status { margin-top: .8rem; border-radius: .6rem; background: #fff5e7; padding: .6rem .9rem; color: #51391e; font-size: .86rem; }
+.colab-status.ok { background: #f0f7df; color: #2f4a1a; }
+.start-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+.lesson-guide .guide-steps p { margin: 0; }
+@media (max-width: 720px) { .colab-form { grid-template-columns: 1fr; } }

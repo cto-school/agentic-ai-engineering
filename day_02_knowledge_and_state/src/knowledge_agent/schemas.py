@@ -31,11 +31,28 @@ class Citation(BaseModel):
     chunk_id: str
 
 
-class GroundedAnswer(BaseModel):
+class ModelAnswer(BaseModel):
+    """Exactly the fields we ask the model to produce.
+
+    Note what is missing: we never ask the model whether its answer is grounded.
+    A model saying "grounded": true proves nothing. The application decides that
+    afterwards by checking the citations against the chunks it actually retrieved.
+    """
+
     answer: str
     citations: list[Citation] = Field(default_factory=list)
-    grounded: bool
     abstained: bool
+
+
+class GroundedAnswer(ModelAnswer):
+    """A model answer after the application has validated it.
+
+    grounded          - set by KnowledgeAssistant._validate_citations, never by the model.
+    dropped_citations - citations the model returned for chunks we never supplied.
+    """
+
+    grounded: bool = False
+    dropped_citations: list[Citation] = Field(default_factory=list)
 
 
 class KnowledgeState(BaseModel):
@@ -53,4 +70,3 @@ class GoldenCase(BaseModel):
     expected_source: str | None
     expected_section: str | None
     essential_terms: list[str]
-

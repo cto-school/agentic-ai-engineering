@@ -32,7 +32,7 @@ dayDirs.forEach((dayDir, index) => {
   const masterFile = `day_${String(index + 1).padStart(2, '0')}_complete.ipynb`;
   const masterPath = path.join(dayRoot, masterFile);
   if (!fs.existsSync(masterPath)) errors.push(`${dayDir}: missing ${masterFile}`);
-  const documented = [...readme.matchAll(/`([^`]+\.ipynb)`/g)].map((match) => path.basename(match[1])).filter((file) => file !== masterFile).sort();
+  const documented = [...readme.matchAll(/`([^`]+\.ipynb)`/g)].map((match) => path.basename(match[1])).filter((file) => file !== masterFile).sort((a, b) => a.localeCompare(b));
   if (JSON.stringify(actual) !== JSON.stringify(documented)) errors.push(`${dayDir}: README notebook sequence differs from the folder`);
   const diagramSource = fs.readFileSync(path.join(courseRoot, 'diagrams', 'source', `day_${String(index + 1).padStart(2, '0')}.md`), 'utf8');
   const knownDiagrams = new Set([...diagramSource.matchAll(/^##\s+(D\d+)/gm)].map((match) => match[1]));

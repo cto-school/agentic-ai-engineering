@@ -36,6 +36,35 @@ The runtime should fail closed on unknown tools, invalid arguments and disallowe
 It should never ask the same model that proposed an action to make the authoritative
 permission decision.
 
+## Permissions, approval and limits
+
+The model proposes an action; Python decides whether it may happen. That decision
+uses two independent facts: is the tool on this agent's allow-list, and what is
+the tool's local **risk level**? The mini harness maps risk to a decision in one
+place, `policy.RISK_POLICY`:
+
+| Risk | Meaning | Decision |
+|---|---|---|
+| `read` | no effect outside the process | allow |
+| `write` | reversible local change | allow |
+| `external` | leaves the machine or is visible to others | approval |
+| `destructive` | irreversible | deny |
+
+Anything not in that table returns `deny`. That is **failing closed**: an unknown
+or misspelled risk label must never be read as permission. A policy that raises
+an exception on an unfamiliar input is worse, because a crash in the wrong place
+can be caught and ignored, while an explicit `deny` is a decision that gets logged.
+
+`approval` is not a question asked in the conversation. The run stops, the exact
+pending action is written to a checkpoint, and a separate `resume` call carries
+the human answer. Rejection is a **successful** safety outcome, so it has its own
+status, `cancelled`, distinct from `failed`.
+
+Limits are the other half of control. A configuration may request any number of
+steps, but the runtime owns a hard ceiling (`MAX_STEPS_HARD_CAP`); the effective
+limit is the smaller of the two, and that is the number the events report. A loop
+that ends at `step_limit` has not crashed - it has been stopped on purpose.
+
 ## Events and checkpoints
 
 Events are append-only observations such as run started, model completed, policy decided
@@ -48,25 +77,31 @@ arguments should be redacted or omitted from telemetry where possible.
 
 ## Retries, timeouts and retry budgets
 
-Network calls fail. A runtime should apply a timeout and may retry transient failures such
-as temporary rate limits. Retries must be bounded and recorded. Exponential backoff with
-jitter helps avoid many clients retrying simultaneously.
+Network calls fail. The runtime applies a timeout and retries transient failures
+such as temporary rate limits, with **exponential backoff**: each attempt waits
+twice as long as the previous one. Every attempt is recorded as a `provider_retry`
+event, and the budget is bounded by `MAX_PROVIDER_RETRIES`; exhausting it emits
+`provider_retry_budget_exhausted` and ends the run. In production, a small random
+`jitter` is added to the delay so many clients do not all retry at the same instant.
 
-Do not retry every failure. Invalid arguments, policy denial and most authentication
-errors will not improve on repetition. Consequential tools require an idempotency strategy
-before automatic retry. The runtime should have both a step budget and a retry budget so
-one failing provider does not consume unlimited time or credit.
+Do not retry every failure. Invalid arguments, unknown tools and most configuration
+or authentication errors will not improve on repetition, so the runtime records
+`provider_error_not_retried` and stops at once. Consequential tools need an
+idempotency strategy before any automatic retry. Step budget and retry budget are
+separate limits so one failing provider cannot consume unlimited time or credit.
 
 ## Cost attribution
 
-Record model, prompt/configuration version, input tokens, output tokens, reasoning tokens,
-estimated cost and run ID. This makes it possible to compare agents and enforce classroom
-budgets. Cost belongs to the complete run, including retries and specialist calls, not
-only the final response.
+Record model, configuration version, input tokens, output tokens, reasoning tokens,
+estimated cost and run ID. That makes it possible to compare agents and enforce
+classroom budgets. Cost belongs to the complete run, including retries, not only
+the final response - which is why usage is attached to every `model_completed`
+event rather than to the result.
 
-The included API credit is a controlled learning resource. Mock mode should be used while
-debugging application logic; live calls should be used when model behavior is the subject
-of the exercise.
+Mock mode reports empty usage on purpose: nothing was bought, so nothing is
+counted. The included API credit is a controlled learning resource. Use mock mode
+while debugging application logic; spend credit only when model behaviour itself
+is the subject of the exercise.
 
 ## MCP: protocol, not permission
 
