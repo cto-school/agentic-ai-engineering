@@ -109,7 +109,7 @@
     "takeaway": "Embeddings improve meaning-based matching, but a high similarity score is not proof that a passage answers the question.",
     "notebook": "Compare keyword and semantic rankings for the same queries and inspect both improvements and surprising matches."
   },
-  "04_basic_rag.ipynb": {
+  "04_exercise_rag_context.ipynb": {
     "idea": "Retrieval-augmented generation (RAG) retrieves relevant evidence and places it in the model prompt before asking for an answer. Retrieval supplies context; the model turns that context into a response.",
     "example": "For a campus-policy question, Python retrieves three handbook chunks, labels them as evidence, and instructs the model to answer only from those passages.",
     "steps": [
@@ -118,7 +118,7 @@
       "Generate an answer grounded in that context"
     ],
     "takeaway": "RAG is an application pipeline, not a special kind of model.",
-    "notebook": "Trace the question, retrieved chunks, assembled prompt, and answer as four distinct objects."
+    "notebook": "Trace the question, retrieved chunks, assembled prompt, and answer as four distinct objects. This section also holds the day's hands-on exercise: Implement build_context, run the check, then read the reference solution to see how skipping a chunk keeps every citation verifiable."
   },
   "05_citations_and_abstention.ipynb": {
     "idea": "A grounded assistant should show which evidence supports its claims and decline when the available evidence is insufficient. Citations aid inspection; abstention prevents confident guessing.",
@@ -164,17 +164,6 @@
     "takeaway": "A trustworthy knowledge assistant exposes its evidence path instead of relying on the model’s general memory.",
     "notebook": "Run the project against both supported and unsupported questions and inspect the complete retrieval trace."
   },
-  "09_exercise_rag_context.ipynb": {
-    "idea": "Retrieved chunks do not automatically become good model context. Your program must select, order, label, and limit them before generation.",
-    "example": "With a 90-character budget, the assembler includes complete high-ranked evidence blocks and skips a block that would be cut halfway.",
-    "steps": [
-      "Preserve retrieval order",
-      "Add clear source labels",
-      "Include only complete chunks that fit the budget"
-    ],
-    "takeaway": "Context assembly is a deliberate engineering boundary between retrieval and generation.",
-    "notebook": "Implement build_context, run the check, then read the reference solution to see how skipping a chunk keeps every citation verifiable."
-  },
   "01_conversation_history.ipynb": {
     "idea": "Models are stateless between API calls. A conversation appears continuous only because the application resends selected earlier messages with each new request.",
     "example": "When a user says “use the same unit,” the model understands only if the earlier unit preference is included again or stored elsewhere.",
@@ -186,7 +175,7 @@
     "takeaway": "History is context managed by the application, not memory living inside the model.",
     "notebook": "Inspect exactly what is sent on the second turn and remove an earlier message to see what the model can no longer infer."
   },
-  "02_context_compaction.ipynb": {
+  "02_exercise_context_compaction.ipynb": {
     "idea": "Conversation history eventually exceeds useful context and cost limits. Compaction replaces older details with a smaller summary while retaining recent messages and important state.",
     "example": "Ten planning turns may become one summary of decisions plus the two latest messages, reducing size while preserving the current task.",
     "steps": [
@@ -195,7 +184,7 @@
       "Keep recent and safety-critical state separately"
     ],
     "takeaway": "Compaction is lossy; its preservation rules must be explicit and tested.",
-    "notebook": "Compare full and compacted histories and list any fact, approval, or unresolved action that must not disappear."
+    "notebook": "Compare full and compacted histories and list any fact, approval, or unresolved action that must not disappear. This section also holds the day's hands-on exercise: Complete compact_history, run the check, then compare with the reference solution and its note on what must never be summarized away."
   },
   "03_custom_persistent_memory.ipynb": {
     "idea": "Persistent memory stores selected information across sessions. A transparent implementation makes it clear what is written, retrieved, updated, and deleted.",
@@ -250,7 +239,7 @@
       "Execute only a matching approved action ID"
     ],
     "takeaway": "The model can propose an action; policy and the user authorize it.",
-    "notebook": "Try modifying an action after approval and verify that the policy blocks execution."
+    "notebook": "Try modifying an action after approval and verify that the policy blocks execution. The worked Try-it implements evaluate_action: proposals are not permissions."
   },
   "08_observability_and_safety_evaluation.ipynb": {
     "idea": "Observability records what the system did; evaluation judges whether that behaviour was good. Together they turn failures into evidence that can be diagnosed and improved.",
@@ -273,28 +262,6 @@
     ],
     "takeaway": "Safety is a sequence of enforceable application boundaries, not a warning placed in the prompt.",
     "notebook": "Run one permitted and one blocked scenario and explain the state transition at the approval boundary."
-  },
-  "10_exercise_history_compaction.ipynb": {
-    "idea": "This exercise asks you to reduce conversation size without silently losing important information. The function must preserve recent messages and summarize selected older facts and tool outcomes.",
-    "example": "An old unit preference and completed calculation move into a system summary while the latest user exchange remains verbatim.",
-    "steps": [
-      "Avoid changing the original list",
-      "Summarize eligible older messages",
-      "Retain the required number of recent messages"
-    ],
-    "takeaway": "Memory management is a testable data transformation, not simply ‘ask the model to remember.’",
-    "notebook": "Complete compact_history, run the check, then compare with the reference solution and its note on what must never be summarized away."
-  },
-  "11_exercise_action_policy.ipynb": {
-    "idea": "This exercise implements the rule that proposals are not permissions. A deterministic policy decides whether a structured action may reach its handler.",
-    "example": "Search runs without approval, but send_email runs only when its exact action ID appears in the approved set.",
-    "steps": [
-      "Reject unknown tools",
-      "Allow declared read-only capabilities",
-      "Require exact approval for side effects"
-    ],
-    "takeaway": "Critical authorization belongs in deterministic code outside the model.",
-    "notebook": "Implement evaluate_action, run the five-case check, then read the reference solution to see why the unknown-tool check comes first."
   },
   "01_seeded_artifact_and_golden_set.ipynb": {
     "idea": "Before adding multiple agents, define a task whose quality can be measured. A seeded artifact contains known issues, and a golden set records which findings a good review should recover.",
@@ -340,7 +307,7 @@
     "takeaway": "Multiple agents are useful when decomposition creates genuinely different expertise or context—not merely more model calls.",
     "notebook": "Inspect each specialist’s scope and measure overlap before and after parallel execution."
   },
-  "05_supervisor_synthesis.ipynb": {
+  "05_exercise_supervisor_synthesis.ipynb": {
     "idea": "A supervisor combines specialist outputs into one coherent result. It must handle duplicates, conflicts, missing reviewers, and provenance without hiding disagreement.",
     "example": "Two specialists may describe the same grounding defect with different wording. The supervisor merges it once while retaining both evidence references.",
     "steps": [
@@ -349,7 +316,7 @@
       "Produce a ranked report with provenance"
     ],
     "takeaway": "Coordination is a data-merging problem as much as a prompting problem.",
-    "notebook": "Trace a finding from each specialist into the final report and verify that failures remain visible."
+    "notebook": "Trace a finding from each specialist into the final report and verify that failures remain visible. This section also holds the day's hands-on exercise: Complete merge_findings, run the check including the severity-versus-id case, then compare with the reference solution."
   },
   "06_comparative_evaluation.ipynb": {
     "idea": "Architecture decisions should compare quality, cost, latency, and failure behaviour under the same test set. An LLM judge can assist with nuanced scoring, but deterministic checks and human inspection remain anchors.",
@@ -373,17 +340,6 @@
     "takeaway": "A multi-agent system is an explicit coordination architecture, not a group chat between personas.",
     "notebook": "Run the complete review and explain which parts truly needed models, multiple specialists, or only Python."
   },
-  "08_exercise_supervisor_merge.ipynb": {
-    "idea": "This exercise isolates the supervisor’s deterministic merge responsibility. It must accept partial failure, remove repeated IDs, and produce a stable priority order.",
-    "example": "If one reviewer times out and two others return F1, the result still contains one F1 plus their other successful findings.",
-    "steps": [
-      "Ignore failed result envelopes",
-      "Keep one finding per stable ID",
-      "Sort by severity and then ID"
-    ],
-    "takeaway": "Reliable multi-agent coordination requires ordinary defensive programming around uncertain workers.",
-    "notebook": "Complete merge_findings, run the check including the severity-versus-id case, then compare with the reference solution."
-  },
   "01_what_is_a_harness.ipynb": {
     "idea": "An AI harness is the reusable runtime around agents. It standardizes how models, tools, permissions, state, logs, limits, and configuration work so every project does not rebuild them differently.",
     "example": "Instead of each agent inventing its own retry and tool code, both a research agent and maintenance agent run through the same controlled runtime.",
@@ -406,7 +362,7 @@
     "takeaway": "Configuration should express policy and choices, while runtime code enforces them.",
     "notebook": "Create two agent configurations and identify what changes without modifying the runner."
   },
-  "03_tool_registry.ipynb": {
+  "03_exercise_tool_registry.ipynb": {
     "idea": "A tool registry is the controlled catalogue connecting model-visible tool descriptions to application-owned Python handlers. It centralizes discovery, validation, and dispatch.",
     "example": "The registry exposes the schema for search only to an agent granted search capability, then calls the corresponding handler when a valid request arrives.",
     "steps": [
@@ -415,7 +371,7 @@
       "Validate again at dispatch time"
     ],
     "takeaway": "Showing a tool schema and permitting execution are separate security decisions; enforce both.",
-    "notebook": "Register tools, filter their visible schemas, and attempt an ungranted dispatch."
+    "notebook": "Register tools, filter their visible schemas, and attempt an ungranted dispatch. This section also holds the day's hands-on exercise: Complete ToolRegistry, run the check (ungranted, unknown, duplicate), then compare with the reference solution's double enforcement."
   },
   "04_permissions_and_limits.ipynb": {
     "idea": "A harness applies permissions and resource limits consistently before and during execution. Limits bound damage, cost, and runaway behaviour even when prompts fail.",
@@ -461,18 +417,7 @@
     "takeaway": "A harness makes safe behaviour repeatable across agents, but this classroom version is not a complete production platform.",
     "notebook": "Run two configurations through the same harness and trace where their policies cause different outcomes."
   },
-  "08_exercise_tool_registry.ipynb": {
-    "idea": "This exercise builds the harness boundary that controls tool discovery and execution. The registry must reject duplicates and enforce capability grants twice.",
-    "example": "An add tool is visible and callable with math.read, but hidden and blocked when that capability is absent.",
-    "steps": [
-      "Register each tool once",
-      "Filter schemas by granted capabilities",
-      "Reject unknown or ungranted dispatches"
-    ],
-    "takeaway": "Least-privilege discovery reduces temptation; protected dispatch provides the actual enforcement.",
-    "notebook": "Complete ToolRegistry, run the check (ungranted, unknown, duplicate), then compare with the reference solution's double enforcement."
-  },
-  "09_project_website_maintenance_agent.ipynb": {
+  "08_project_website_maintenance_agent.ipynb": {
     "idea": "The operational capstone runs the full agent lifecycle on a realistic maintenance task: obtain updates, decide what matters, propose a website change, pass guardrails, request approval, and record the result. Automation only triggers this workflow; it does not remove its controls.",
     "example": "A scheduled run reads a public release feed, compares it with stored state, drafts a bounded update, and stops at an approval gate before any website-changing action.",
     "steps": [

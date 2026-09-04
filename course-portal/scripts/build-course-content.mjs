@@ -13,24 +13,22 @@ const diagramMap = {
   '05_exercise_manual_agent_loop.ipynb': ['D04'], '06_langgraph_agent.ipynb': ['D05'],
   '07_project_research_assistant.ipynb': ['D01', 'D03', 'D04'],
   '01_documents_and_chunks.ipynb': ['D06'], '02_keyword_search.ipynb': ['D06'],
-  '03_embeddings_and_semantic_search.ipynb': ['D06'], '04_basic_rag.ipynb': ['D07'],
+  '03_embeddings_and_semantic_search.ipynb': ['D06'], '04_exercise_rag_context.ipynb': ['D07'],
   '05_citations_and_abstention.ipynb': ['D07'], '06_retrieval_evaluation.ipynb': ['D07'],
-  '07_retrieval_tool_and_state.ipynb': ['D07'], '08_project_knowledge_assistant.ipynb': ['D06', 'D07'],
-  '09_exercise_rag_context.ipynb': ['D07'], '01_conversation_history.ipynb': ['D08'],
-  '02_context_compaction.ipynb': ['D09'], '03_custom_persistent_memory.ipynb': ['D10'],
+  '07_retrieval_tool_and_state.ipynb': ['D07'], '08_project_knowledge_assistant.ipynb': ['D06', 'D07'], '01_conversation_history.ipynb': ['D08'],
+  '02_exercise_context_compaction.ipynb': ['D09'], '03_custom_persistent_memory.ipynb': ['D10'],
   '04_mem0_platform.ipynb': ['D10'], '05_small_plans.ipynb': ['D08'],
   '06_tools_with_side_effects.ipynb': ['D11'], '07_permissions_and_approval.ipynb': ['D11'],
   '08_observability_and_safety_evaluation.ipynb': ['D11'], '09_project_safe_task_agent.ipynb': ['D08', 'D10', 'D11'],
-  '10_exercise_history_compaction.ipynb': ['D09'], '11_exercise_action_policy.ipynb': ['D11'],
   '01_seeded_artifact_and_golden_set.ipynb': ['D12'], '02_single_reviewer_baseline.ipynb': ['D12'],
   '03_deterministic_checks.ipynb': ['D12'], '04_parallel_specialist_reviewers.ipynb': ['D13'],
-  '05_supervisor_synthesis.ipynb': ['D14'], '06_comparative_evaluation.ipynb': ['D15'],
-  '07_project_engineering_review_team.ipynb': ['D13', 'D14', 'D15'], '08_exercise_supervisor_merge.ipynb': ['D14'],
+  '05_exercise_supervisor_synthesis.ipynb': ['D14'], '06_comparative_evaluation.ipynb': ['D15'],
+  '07_project_engineering_review_team.ipynb': ['D13', 'D14', 'D15'],
   '01_what_is_a_harness.ipynb': ['D16'], '02_model_configuration_and_runtime.ipynb': ['D16'],
-  '03_tool_registry.ipynb': ['D16'], '04_permissions_and_limits.ipynb': ['D16'],
+  '03_exercise_tool_registry.ipynb': ['D16'], '04_permissions_and_limits.ipynb': ['D16'],
   '05_events_logs_and_checkpoints.ipynb': ['D16'], '06_mcp_client.ipynb': ['D17'],
-  '07_project_mini_harness.ipynb': ['D16', 'D18'], '08_exercise_tool_registry.ipynb': ['D16'],
-  '09_project_website_maintenance_agent.ipynb': ['D18', 'D19']
+  '07_project_mini_harness.ipynb': ['D16', 'D18'],
+  '08_project_website_maintenance_agent.ipynb': ['D18', 'D19']
 };
 
 const days = [
@@ -38,7 +36,7 @@ const days = [
   { dir: 'day_02_knowledge_and_state', short: 'Knowledge', title: 'Knowledge, RAG & State', project: 'Engineering Knowledge Assistant', projectLesson: 8, prerequisite: 'Uses the model-call and tool-loop ideas from Day 1. Retrieval itself is introduced from first principles.', projectBrief: 'You will build an assistant that searches supplied engineering documents, assembles relevant evidence, answers with citations, and clearly abstains when the collection cannot support an answer.', projectFlow: ['Prepare labelled document chunks', 'Compare keyword and semantic retrieval', 'Assemble bounded RAG context', 'Answer with evidence or abstain'], color: '#41b3a3' },
   { dir: 'day_03_memory_and_safety', short: 'Safety', title: 'Memory, Guardrails & Safety', project: 'Safe Personal Task Agent', projectLesson: 9, prerequisite: 'Uses the visible state and tool execution boundaries developed on Days 1 and 2.', projectBrief: 'You will build a task agent that can retain selected preferences, form a small plan, propose real actions, wait for approval, and leave a trace showing exactly why an action ran or was blocked.', projectFlow: ['Manage conversation context', 'Store only useful long-term memory', 'Separate plans from execution', 'Apply guardrails, approval, and evaluation'], color: '#7a6ff0' },
   { dir: 'day_04_multi_agent_systems', short: 'Coordination', title: 'Multi-Agent Systems', project: 'Engineering Design Review Team', projectLesson: 7, prerequisite: 'Assumes you can build and evaluate one bounded agent. The day begins by measuring that simpler baseline.', projectBrief: 'You will compare one reviewer with a coordinated review team: deterministic checks and focused specialists produce findings that a supervisor merges into an evidence-backed engineering report.', projectFlow: ['Define a measurable review task', 'Establish a single-agent baseline', 'Add genuinely distinct specialists', 'Merge and evaluate quality, cost, and latency'], color: '#de9e36' },
-  { dir: 'day_05_ai_harness', short: 'Runtime', title: 'Harness & Automation', project: 'Mini Harness + Website Maintenance Agent', projectLesson: 9, prerequisite: 'Consolidates the model, tool, knowledge, memory, safety, and coordination boundaries built during Days 1–4.', projectBrief: 'You will first package the repeated controls into a reusable mini harness, then use that harness in a website-maintenance workflow that checks updates, proposes a change, applies policy, pauses for approval, and records the run.', projectFlow: ['Separate configuration from runtime', 'Govern tools and resource limits', 'Add events, checkpoints, and MCP', 'Run an end-to-end automated maintenance cycle'], color: '#3085c3' },
+  { dir: 'day_05_ai_harness', short: 'Runtime', title: 'Harness & Automation', project: 'Mini Harness + Website Maintenance Agent', projectLesson: 8, prerequisite: 'Consolidates the model, tool, knowledge, memory, safety, and coordination boundaries built during Days 1–4.', projectBrief: 'You will first package the repeated controls into a reusable mini harness, then use that harness in a website-maintenance workflow that checks updates, proposes a change, applies policy, pauses for approval, and records the run.', projectFlow: ['Separate configuration from runtime', 'Govern tools and resource limits', 'Add events, checkpoints, and MCP', 'Run an end-to-end automated maintenance cycle'], color: '#3085c3' },
 ];
 
 function plainTitle(source, fallback) {

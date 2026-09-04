@@ -1,149 +1,82 @@
-# Day 5 — Build a Mini AI Harness
+# Day 5 — AI Harness and Automation
 
-> **Status:** Complete reference harness, harness-driven website-maintenance capstone,
-> instructor MCP server, offline fallbacks, and tests are included.
+**Project:** a Mini AI Harness — configuration, provider adapter, tool registry, policy, runtime,
+events and checkpoints — with a **Website Maintenance Agent** running on top of it that changes a
+real file only after a person approves the exact patch.
 
-## Project
+## The notebook
 
-Days 1–4 each built one agent, and each quietly re-implemented the same chores: pick a
-model, describe tools, run a loop, decide whether an action is allowed, remember something,
-explain what happened. Day 5 pulls those chores out into a small reusable **harness** —
-configuration, provider adapter, tool registry, policy, runtime, events and checkpoints.
+Students open **one** Google Colab notebook, `day_05_complete.ipynb`, and run it top to bottom.
+It is self-contained: no repository clone, no `src/` imports, no `.env`. The API key comes from a
+Colab secret named `OPENROUTER_API_KEY` (or is typed once when the setup cell asks). Without a key
+the notebook runs on a built-in mock model *and* a deterministic mock provider, and every mechanism
+that matters — scoped discovery, argument validation, the risk-to-decision table, the approval
+pause, the step cap, retries, the event log — is real.
 
-The capstone then puts a real workflow on top of that harness. A Website Maintenance Agent
-registers its two actions as harness tools with honest risk levels: drafting an update is
-`write` (allowed automatically), publishing it is `external` (paused for a human). The
-runtime, `policy.decide`, the event log and the checkpoint are exactly the ones built in
-lessons 5.2–5.5; `WebsiteGuardrails` adds the domain checks — trusted host, no
-instruction-like text in external data, target path inside the site folder.
+Every section is a step-by-step build: a short explanation, a code cell that does one thing and
+prints what happened, and a two-question checkpoint with folded answers. The tool registry is the
+day's one hands-on exercise: students write it, run a behavioural check, then read the commented
+reference solution that the rest of the day uses. Day 1's `chat`, `make_strict`, `make_tool` and
+`execute_tool_call` are carried over verbatim in one cell near the top; everything else — the
+harness — is built in the notebook, piece by piece.
 
-Everything runs with **no API key**. Live paths are optional and always fall back.
+| Section | Lesson file (derived) | What is built |
+|---|---|---|
+| 5.1 | `01_what_is_a_harness.ipynb` | the Day 1–4 problem → component table; five dataclasses; agent configs written as JSON data |
+| 5.2 | `02_model_configuration_and_runtime.ipynb` | `MockProvider` driven by `mock_plan`; `LiveProvider` wrapping `chat()`; `build_provider`; `EventStore`; bounded retry with backoff |
+| 5.3 | `03_exercise_tool_registry.ipynb` | **exercise:** `ToolRegistry` — duplicate/unknown/ungranted/malformed all refused; four tools, four risk levels |
+| 5.4 | `04_permissions_and_limits.ipynb` | `RISK_POLICY` + `decide` (fail-closed); `HarnessRuntime`; approval pause → `cancelled` → `completed`; `MAX_STEPS_HARD_CAP` |
+| 5.5 | `05_events_logs_and_checkpoints.ipynb` | JSONL event log; `JSONCheckpointStore`; restart-and-resume; retry recovered then exhausted; per-run cost totals |
+| 5.6 | `06_mcp_client.ipynb` | `FakeMCPClient` (same `.name`/`.description`/`.inputSchema` shape); local classification; a real `FastMCP` stdio server written and called |
+| 5.7 | `07_project_mini_harness.ipynb` | the whole harness hosting two agents, one approval end to end, memory + MCP boundary, a third agent added as data |
+| 5.8 | `08_project_website_maintenance_agent.ipynb` | capstone: `propose_update` (write) and `publish_update` (external) as harness tools, guardrails, change detection, poisoned source, live paths |
 
-**Classroom notebook:** [`day_05_complete.ipynb`](day_05_complete.ipynb) combines the
-sections into one Colab-ready path. The files under `notebooks/` are the modular source.
+The files under `notebooks/` are generated from the day notebook by `split_day_notebooks.py`
+for the course portal. Edit the day notebook, then re-run the split; do not edit the lesson files.
 
-## Progression
+## Live versus mock
 
-```text
-Compare two application-specific agents
--> name the repeated project code
--> central model configuration and a provider adapter
--> reusable runtime with a hard step cap and a retry budget
--> tool registry with schemas and risk levels
--> permissions, approval checkpoints and limits
--> events, durable logs and resumable checkpoints
--> MCP client: discover, classify, then authorise
--> integrated harness hosting several agent configurations
--> a scheduled website-maintenance cycle running on that harness
-```
+| Mode | When | What differs |
+|---|---|---|
+| Mock | no key found | `MockProvider` plans tool calls from each config's `mock_plan`; `deterministic_proposer` and a canned model reply write the capstone's text |
+| Live | key found | `LiveProvider` calls `openai/gpt-oss-120b` through OpenRouter using the Day 1 `chat()`; `model_proposer` asks the real model for the website update |
 
-## Concepts introduced
+Both modes run every cell. The one *required live observation* (section 5.8) compares the model's
+proposal with the deterministic one and confirms that no guardrail and no policy decision changes.
+Setting `RUN_LIVE_FETCH=1` additionally pulls three real public GitHub releases through the same
+`UpdateItem` contract. Neither live path can publish anything: the run still stops at
+`pending_approval`.
 
-Runtime, harness, provider adapter, registry, risk level, policy, fail-closed, execution
-limit, retry budget, exponential backoff, cost attribution, event, checkpoint, protocol,
-MCP client, MCP server, automation trigger, change detection, guardrail.
+## Safety behaviour demonstrated in code
 
-## Notebook sequence
+| Layer | Trigger | What the student sees |
+|---|---|---|
+| Registry | duplicate name, unknown tool, ungranted tool, missing/mistyped/undeclared argument | `ValueError` / `KeyError` / `PermissionError` / `TypeError` before any function body runs |
+| Policy | `external` tool; allow-listed `destructive` tool; `risk="quantum"` | `pending_approval`; `deny` with a recorded `policy_decision`; `deny` by `RISK_POLICY.get(..., "deny")` |
+| Limits | a model that never says "done"; a config asking for 500 steps | status `step_limit`, with the *effective* limit (10) in the event |
+| Provider | one transient failure; a permanent one; a `ValueError` | `provider_retry` with doubling backoff; `provider_retry_budget_exhausted`; `provider_error_not_retried` |
+| Durability | checkpoint deleted before `resume` | `failed` — the harness will not ask the model to invent the pending action again |
+| Guardrails | a feed item containing "ignore all previous instructions"; a downgraded risk level | `tool_failed` before any draft exists; the human gate disappearing when `publish_update` becomes `write` |
 
-1. `01_what_is_a_harness.ipynb` — loads two agent configs and prints a table mapping each
-   Day 1–4 pain point to the harness component that now owns it.
-2. `02_model_configuration_and_runtime.ipynb` — reads a config as data, builds the matching
-   provider adapter, runs it with a live fallback, and reads the usage fields in the events.
-3. `03_tool_registry.ipynb` — registers four tools spanning four risk levels, scopes
-   discovery per agent, and rejects four kinds of malformed call before any function runs.
-4. `04_permissions_and_limits.ipynb` — prints the risk→decision table, pauses an external
-   action on a checkpoint, resolves it to `cancelled` and then to `completed`, denies an
-   allow-listed destructive tool, shows an unknown risk level failing closed, and holds a
-   500-step config to the runtime's cap.
-5. `05_events_logs_and_checkpoints.ipynb` — writes a JSONL event log, resumes a paused run
-   from disk with a brand-new runtime, watches a bounded retry with exponential backoff
-   recover and then exhaust its budget, and totals per-run cost.
-6. `06_mcp_client.ipynb` — discovers a tool offline, classifies and authorises it locally,
-   re-classifies it to flip the decision, then repeats the session against the real
-   instructor stdio server when the SDK is installed.
-7. `07_project_mini_harness.ipynb` — one runtime hosting several agents end to end, then
-   adds a **third** agent configuration with zero changes to `src/mini_harness/`.
-8. `08_exercise_tool_registry.ipynb` — independent implementation lab (capability-aware
-   discovery and dispatch).
-9. `09_project_website_maintenance_agent.ipynb` — the operational capstone described above.
+Everything the notebook writes goes to `data/generated/day5_workspace/` (git-ignored): the agent
+configs, the update feeds, one MCP server file, and a timestamped folder per run holding
+`events.jsonl`, `checkpoints/`, `state.json` and the generated `site/`. Delete the folder to reset.
 
-## Required environment
+## Reference package (optional)
 
-- The course core dependencies (`requirements.txt` at the repository root).
-- Optional: the MCP Python SDK, pinned in `requirements.txt` as `mcp>=1.27,<2`. Install it
-  with `pip install "mcp>=1.27,<2"`. That range is the classroom pin — the SDK is evolving,
-  so the course environment, not an unbounded latest install, defines the version.
-- `instructor_mcp_server.py` is course infrastructure; students consume it, writing an MCP
-  server is an optional extension.
-
-Without the MCP SDK, notebook 06 runs entirely against `FakeMCPClient`, which returns
-objects with the same `.name` / `.description` / `.inputSchema` attributes as the real SDK,
-so no access pattern has to be unlearned. Writing an MCP server, FastAPI and Docker are
-optional extensions rather than core lab requirements.
-
-## Run the reference project
+`src/mini_harness/` is a packaged version of the same design (schemas, registry, policy, providers,
+runtime, events, MCP client, website agent) with tests in `tests/`. It is not used by the notebook;
+it exists for instructors and for students who want the notebook's ideas as an installable module.
+`instructor_mcp_server.py`, `run_project.py` and `run_website_agent.py` belong to that package.
 
 ```powershell
-py run_project.py           # the mini harness in mock mode: two agents, one approval
-py run_website_agent.py     # one scheduled tick of the capstone; stops at pending_approval
-py -m pytest tests -q
+python -m pytest tests -q
+python run_project.py
+python run_website_agent.py
 ```
-
-Use `python` instead of `py` where that is the configured launcher. `run_website_agent.py`
-writes only under `data/generated/`, which is git-ignored; delete that folder to reset.
-
-## Minimum harness responsibilities
-
-- Load model configuration and select a provider adapter.
-- Send model messages and optional tool schemas.
-- Register tools with input schemas and risk levels.
-- Validate requested tool arguments before execution.
-- Allow, deny, or request approval according to application policy — failing closed on
-  anything it does not recognise.
-- Stop after a configured maximum number of steps, capped by the runtime.
-- Retry transient provider failures a bounded number of times, and record every attempt.
-- Record model, tool, approval, failure, and completion events.
-- Expose a small memory interface.
-- Discover and call one local MCP tool.
-- Load several agent configurations without rewriting the runtime.
 
 ## Core principle
 
-Tool discovery is not authorization. A capability being visible through MCP does not
-automatically make it safe or permitted to call.
-
-## Deliberately deferred
-
-- Production authentication
-- Remote MCP deployment
-- Distributed execution
-- Kubernetes
-- Advanced isolation and operating-system sandboxes
-- General-purpose coding-agent features
-
-## Project completion checklist
-
-- [x] Model routing is centralized and mock mode works offline.
-- [x] Tools are registered rather than hardcoded into the loop.
-- [x] Tool arguments are validated before execution.
-- [x] Policy enforcement is performed by Python, not delegated to the model, and an
-      unrecognised risk level denies rather than raising.
-- [x] Runs terminate with completed, pending_approval, cancelled, failed, or step_limit.
-- [x] A configuration cannot raise the runtime's hard step cap.
-- [x] Transient provider failures are retried with bounded exponential backoff.
-- [x] Events explain the sequence of execution and are durable as JSONL.
-- [x] One local MCP capability can be discovered and invoked, with an offline fallback that
-      has the same object shape.
-- [x] The same runtime hosts the research agent, the task agent, a third agent written
-      during lesson 7, and the website agent of the capstone.
-- [x] The capstone's real file write happens only after an explicit human approval.
-- [x] The student can explain the difference between an agent, framework, protocol,
-      runtime, and harness.
-
-## Optional extensions
-
-- Expose the harness through FastAPI.
-- Package the service with Docker.
-- Write a trivial two-tool MCP server.
-- Add a second hosted model configuration.
-- Export traces to LangSmith or OpenTelemetry.
+Tool discovery is not authorization. A capability being visible — locally or over MCP — does not
+make it safe or permitted to call. Configuration proposes; the harness decides; a person approves
+anything that leaves the machine.

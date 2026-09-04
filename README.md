@@ -39,7 +39,7 @@ BUILD -> OBSERVE -> BREAK -> IMPROVE
 
 Students open one Google Colab notebook per day: `day_01_complete.ipynb` through `day_05_complete.ipynb`. Each day notebook is the **source of truth**: a short setup, the guided sections in order, one hands-on exercise with a commented reference solution, and the integrated daily project. The files inside each day's `notebooks/` folder are derived from the day notebook by `split_day_notebooks.py` so the course portal can show one lesson at a time; do not edit them by hand.
 
-Day 1 is fully self-contained (no repository clone, no local files). Days 2 to 5 still carry a Colab bootstrap cell that clones the repository for their `src/` packages and data; they are next in line for the same simplification.
+Every day notebook is fully self-contained: no repository clone, no local files, no `.env`. The data a day needs (document corpus, golden set, safety cases, seeded code artifact, harness configs, update feeds) is created by the notebook itself, and the reference `src/` packages are an optional packaged version of the same designs for instructors.
 
 ## How the lessons teach
 
@@ -100,7 +100,7 @@ beginner-facing notebooks, ordinary-Python reference implementations, mock/local
 paths, data, and tests. The repository is ready for an instructor pilot and
 clean-machine/live-service validation before classroom delivery.
 
-The final notebook set contains 45 progressive notebooks, including six pivotal exercise notebooks and one operational website-maintenance capstone. Days 3–5 have been executed
+The five day notebooks contain 39 sections, including one hands-on exercise per day (two on Day 3, the second as a worked Try-it) and one operational website-maintenance capstone. Days 3–5 have been executed
 end-to-end in offline mode; live-provider and hosted-product smoke checks remain part of
 the instructor's pre-delivery checklist because they depend on credentials, quotas,
 network policy, and current SDK behavior.
