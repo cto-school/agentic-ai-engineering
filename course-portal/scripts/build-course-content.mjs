@@ -32,11 +32,31 @@ const diagramMap = {
 };
 
 const days = [
-  { dir: 'day_01_model_tools_agent', short: 'Foundations', title: 'Model, Tools & Agent', project: 'Smart Research Assistant', projectLesson: 7, prerequisite: 'No previous agentic-AI knowledge is required. Basic Python functions, lists, and dictionaries are enough.', projectBrief: 'You will progressively build an assistant that accepts a focused question, asks a model what to do next, uses approved research tools, records the evidence, and stops with an inspectable answer.', projectFlow: ['Make one model call', 'Turn model output into validated data', 'Let the model request tools', 'Control the complete loop in Python'], color: '#ef8354' },
-  { dir: 'day_02_knowledge_and_state', short: 'Knowledge', title: 'Knowledge, RAG & State', project: 'Engineering Knowledge Assistant', projectLesson: 8, prerequisite: 'Uses the model-call and tool-loop ideas from Day 1. Retrieval itself is introduced from first principles.', projectBrief: 'You will build an assistant that searches supplied engineering documents, assembles relevant evidence, answers with citations, and clearly abstains when the collection cannot support an answer.', projectFlow: ['Prepare labelled document chunks', 'Compare keyword and semantic retrieval', 'Assemble bounded RAG context', 'Answer with evidence or abstain'], color: '#41b3a3' },
-  { dir: 'day_03_memory_and_safety', short: 'Safety', title: 'Memory, Guardrails & Safety', project: 'Safe Personal Task Agent', projectLesson: 9, prerequisite: 'Uses the visible state and tool execution boundaries developed on Days 1 and 2.', projectBrief: 'You will build a task agent that can retain selected preferences, form a small plan, propose real actions, wait for approval, and leave a trace showing exactly why an action ran or was blocked.', projectFlow: ['Manage conversation context', 'Store only useful long-term memory', 'Separate plans from execution', 'Apply guardrails, approval, and evaluation'], color: '#7a6ff0' },
-  { dir: 'day_04_multi_agent_systems', short: 'Coordination', title: 'Multi-Agent Systems', project: 'Engineering Design Review Team', projectLesson: 7, prerequisite: 'Assumes you can build and evaluate one bounded agent. The day begins by measuring that simpler baseline.', projectBrief: 'You will compare one reviewer with a coordinated review team: deterministic checks and focused specialists produce findings that a supervisor merges into an evidence-backed engineering report.', projectFlow: ['Define a measurable review task', 'Establish a single-agent baseline', 'Add genuinely distinct specialists', 'Merge and evaluate quality, cost, and latency'], color: '#de9e36' },
-  { dir: 'day_05_ai_harness', short: 'Runtime', title: 'Harness & Automation', project: 'Mini Harness + Website Maintenance Agent', projectLesson: 8, prerequisite: 'Consolidates the model, tool, knowledge, memory, safety, and coordination boundaries built during Days 1–4.', projectBrief: 'You will first package the repeated controls into a reusable mini harness, then use that harness in a website-maintenance workflow that checks updates, proposes a change, applies policy, pauses for approval, and records the run.', projectFlow: ['Separate configuration from runtime', 'Govern tools and resource limits', 'Add events, checkpoints, and MCP', 'Run an end-to-end automated maintenance cycle'], color: '#3085c3' },
+  { dir: 'day_01_model_tools_agent', short: 'Foundations', title: 'Model, Tools & Agent', project: 'Smart Research Assistant', projectLesson: 7, color: '#ef8354',
+    outcome: 'Build a tool-using agent whose every step you can point to.',
+    prerequisite: 'No agentic-AI background is needed. Basic Python (functions, lists, dictionaries) is enough.',
+    projectBrief: 'You send one message to a model, then add the pieces that turn replies into a dependable assistant: a validated output contract, a safe calculator tool, and a loop you control. The project is a research assistant that shows its evidence.',
+    projectFlow: ['Make one model call and read the reply', 'Turn replies into validated data', 'Let the model request a tool you run', 'Write the bounded loop and ship the assistant'] },
+  { dir: 'day_02_knowledge_and_state', short: 'Knowledge', title: 'Knowledge, RAG & State', project: 'Engineering Knowledge Assistant', projectLesson: 8, color: '#41b3a3',
+    outcome: 'Build an assistant that answers from evidence or says it cannot.',
+    prerequisite: 'Uses the chat() helper and tool loop from Day 1. Retrieval itself is introduced from scratch.',
+    projectBrief: 'You give the assistant documents it has never seen: split them into chunks, find the right ones by keyword and by meaning, assemble evidence within a budget, answer with citations, and measure retrieval separately from answers.',
+    projectFlow: ['Chunk documents with their source labels', 'Compare keyword and semantic retrieval', 'Assemble evidence and answer with citations', 'Measure retrieval and answers separately'] },
+  { dir: 'day_03_memory_and_safety', short: 'Safety', title: 'Memory, Guardrails & Safety', project: 'Safe Personal Task Agent', projectLesson: 9, color: '#7a6ff0',
+    outcome: 'Build an agent that can act, but only within rules you wrote.',
+    prerequisite: 'Uses the tools and loop from Day 1. Memory, planning, and policy are built from scratch.',
+    projectBrief: 'You manage a growing conversation, keep only the memories worth keeping, let the model propose plans and actions, and put deterministic policy and human approval between a proposal and any real side effect.',
+    projectFlow: ['Bound the conversation with compaction', 'Keep selected memories with a lifecycle', 'Separate plans and proposals from execution', 'Enforce policy, approval, and a safety suite'] },
+  { dir: 'day_04_multi_agent_systems', short: 'Coordination', title: 'Multi-Agent Systems', project: 'Engineering Design Review Team', projectLesson: 7, color: '#de9e36',
+    outcome: 'Decide with numbers whether more agents are worth it.',
+    prerequisite: 'Assumes you can build and evaluate one bounded agent. The day starts by measuring that simpler baseline.',
+    projectBrief: 'You compare one reviewer with a team: deterministic checks, focused specialists running in parallel, and a supervisor that merges findings. Two scenarios show when the team is worth its cost and when it is not.',
+    projectFlow: ['Define a review task you can score', 'Measure the single-reviewer baseline', 'Add checks and parallel specialists', 'Merge, compare, and decide with evidence'] },
+  { dir: 'day_05_ai_harness', short: 'Runtime', title: 'Harness & Automation', project: 'Mini Harness + Website Maintenance Agent', projectLesson: 8, color: '#3085c3',
+    outcome: 'Build a reusable runtime and run a real workflow on it.',
+    prerequisite: 'Consolidates the model, tool, knowledge, memory, safety, and coordination boundaries from Days 1 to 4.',
+    projectBrief: 'You package the controls every project repeated into one reusable runtime: configuration, a tool registry, policy and limits, events and checkpoints, and an MCP connection. Then that harness runs a website-maintenance agent end to end.',
+    projectFlow: ['Separate configuration from the runtime', 'Register, govern, and limit tools', 'Record events, resume from checkpoints, connect MCP', 'Run the maintenance agent through the harness'] },
 ];
 
 function plainTitle(source, fallback) {
@@ -78,6 +98,14 @@ function diagramCatalog(dayNumber) {
 }
 
 fs.mkdirSync(outputRoot, { recursive: true });
+fs.mkdirSync(path.join(siteRoot, 'public', 'diagrams'), { recursive: true });
+fs.cpSync(path.join(courseRoot, 'diagrams', 'rendered'), path.join(siteRoot, 'public', 'diagrams'), { recursive: true });
+
+// The notebooks embed diagrams as base64 images; the portal serves the same PNGs as files.
+function relocateImages(markdown) {
+  return markdown.replace(/<img src="data:image\/png;base64,[^"]+" width="(\d+)" alt="(D\d+): ([^"]*)">/g,
+    (match, width, id, alt) => `<img src="/diagrams/${id}.png" width="${width}" alt="${id}: ${alt}">`);
+}
 
 let setupGuide = '';
 
@@ -100,6 +128,7 @@ const data = days.map((day, dayIndex) => {
     projectBrief: day.projectBrief,
     projectFlow: day.projectFlow,
     color: day.color,
+    outcome: day.outcome,
     masterFile,
     masterPath: `${day.dir}/${masterFile}`,
     masterPublicPath: `/notebooks/${day.dir}/${masterFile}`,
@@ -110,18 +139,11 @@ const data = days.map((day, dayIndex) => {
       fs.copyFileSync(sourcePath, path.join(destination, file));
       const cells = notebook.cells
         .filter((cell) => cell.cell_type === 'markdown' || cell.cell_type === 'code')
-        .map((cell, cellIndex) => ({ id: cellIndex + 1, type: cell.cell_type, source: cell.source.join(''), tags: cell.metadata?.tags || [] }));
+        .map((cell, cellIndex) => ({ id: cellIndex + 1, type: cell.cell_type, source: cell.cell_type === 'markdown' ? relocateImages(cell.source.join('')) : cell.source.join(''), tags: cell.metadata?.tags || [] }));
       const markdownCells = cells.filter((cell) => cell.type === 'markdown');
       const readable = markdownCells.map((cell) => cell.source).join('\n\n');
-      const theory = markdownCells
-        .filter((cell) => cell.tags.includes('embedded-course-theory'))
-        .map((cell) => cell.source.replace(/^##\s+Concept briefing\s*/i, ''))
-        .join('\n\n')
-        .trim();
-      const closingCell = [...markdownCells].reverse().find((cell) => /###\s+(Checkpoint|Recap)|^##\s+Explain/m.test(cell.source));
-      const closing = closingCell ? closingCell.source.trim() : '';
-      const beforeCell = markdownCells.find((cell) => /^##\s+Before you begin/m.test(cell.source));
-      const before = beforeCell ? beforeCell.source.replace(/^##\s+Before you begin\s*/m, '').trim() : '';
+      // The section's own explanations without the code: every markdown cell, minus the H1 the page already shows.
+      const reading = markdownCells.map((cell) => cell.source).join('\n\n').replace(/^#\s+.+\r?\n/m, '').trim();
       const setupCell = markdownCells.find((cell) => /^##\s+Your API key/m.test(cell.source));
       if (setupCell && !setupGuide) setupGuide = setupCell.source.trim();
       const codeCells = cells.filter((cell) => cell.type === 'code').length;
@@ -140,9 +162,7 @@ const data = days.map((day, dayIndex) => {
         title: plainTitle(readable, file.replace('.ipynb', '').replaceAll('_', ' ')),
         description: guide.idea,
         guide: { ...guide, mistake },
-        before,
-        theory,
-        closing,
+        reading,
         cells: cells.map(({ id, type, source }) => ({ id, type, source })),
         diagrams: lessonDiagrams,
         codeCells,

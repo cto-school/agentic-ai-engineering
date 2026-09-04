@@ -8,7 +8,7 @@
   "scripts": {
     "content": "node scripts/build-course-content.mjs",
     "align": "node scripts/validate-course-alignment.mjs",
-    "prebuild": "python ../build_master_notebooks.py && node scripts/build-course-content.mjs && node scripts/validate-course-alignment.mjs",
+    "prebuild": "python ../split_day_notebooks.py && node scripts/build-course-content.mjs && node scripts/validate-course-alignment.mjs",
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "wrangler dev --config dist/server/wrangler.json",

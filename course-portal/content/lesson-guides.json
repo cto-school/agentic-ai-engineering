@@ -1,431 +1,431 @@
 {
   "01_first_model_call.ipynb": {
-    "idea": "A language model is a text-processing service. Your program sends it a list of messages and receives a response; the model does not automatically remember earlier calls or know anything about your application.",
-    "example": "Think of ordering at a counter: the request must contain everything needed for this order. If you make another request later, you must include any earlier information that still matters.",
+    "idea": "A language model is a text-in, text-out service. It keeps nothing between calls, so your program sends the whole message list every time.",
+    "example": "Like a helpdesk where a different person picks up every call: you repeat the whole story each time or they cannot help.",
     "steps": [
-      "Create the client and choose a model",
-      "Send a small, explicit message list",
-      "Inspect the returned text and usage data"
+      "Build a message list with roles.",
+      "Send it with chat() in one request.",
+      "Read the reply text and usage."
     ],
-    "takeaway": "A model call is one input-output operation. The surrounding Python program supplies continuity, validation, tools, and limits.",
-    "notebook": "Run the same prompt twice, inspect the response object, and notice which information is supplied by your code rather than remembered by the model."
+    "takeaway": "The model generates text; your program supplies the memory.",
+    "notebook": "Watch call 2 say it does not know your name, then call 3 answer \"Your name is Aurora.\" The only difference is that we re-sent the history."
   },
   "02_configuring_model_behavior.ipynb": {
-    "idea": "Model behaviour is influenced by instructions and generation settings, but it is not programmed as rigidly as an ordinary function. Good configuration makes the desired behaviour clear and keeps experiments comparable.",
-    "example": "A system instruction is like a job description; the user message is today’s task. Temperature changes how adventurous the response may be, not what the job is.",
+    "idea": "A system message gives the model standing instructions, and temperature controls how freely it picks the next word. Both steer the reply; neither guarantees it.",
+    "example": "The system message is the job description, the user message is today's task; temperature 0 repeats itself, temperature 1 gives you variety.",
     "steps": [
-      "Separate durable system instructions from user requests",
-      "Change one setting at a time",
-      "Compare outputs against the same task"
+      "Ask the question with no system message.",
+      "Repeat with a three-section system message.",
+      "Ask for a dictionary; parse it."
     ],
-    "takeaway": "Prompts and settings steer a probabilistic component. They do not replace application checks.",
-    "notebook": "Compare controlled variations of the same request and identify what changed because of the instruction, setting, or model."
+    "takeaway": "Instructions steer the wording; they do not guarantee the shape.",
+    "notebook": "The reply to the dictionary request looks correct to a person, and the next line prints \"json.loads FAILED\" with the decode error."
   },
   "03_structured_outputs.ipynb": {
-    "idea": "Free-form prose is convenient for people but awkward for programs. Structured output asks the model to return named fields that Python can parse and validate before using them.",
-    "example": "Instead of extracting a due date from a paragraph, request an object such as {task, due_date, priority}. The program can then reject a missing or invalid date.",
+    "idea": "A schema turns the reply into a contract: named fields, types, and allowed ranges. You ask the model for that shape and then check it in your own code before using it.",
+    "example": "The ResearchSummary model demands a confidence between 0 and 1 and at least one key point, like a form that refuses an out-of-range entry.",
     "steps": [
-      "Define the expected fields and types",
-      "Ask the model for that structure",
-      "Parse and validate before continuing"
+      "Define ResearchSummary with Pydantic field constraints.",
+      "Send its strict schema as response_format.",
+      "Validate the reply with model_validate_json."
     ],
-    "takeaway": "Structure creates a reliable boundary between uncertain model output and deterministic application code.",
-    "notebook": "Inspect a valid response and at least one malformed response, then see how validation turns silent ambiguity into a visible error."
+    "takeaway": "Validation checks the shape of an answer, not its truth.",
+    "notebook": "The real reply prints \"Validation : valid\" and typed data. The faked reply with confidence 4.5 and empty key_points prints an \"invalid:\" reason and \"Typed data : None\"."
   },
   "04_tool_calling.ipynb": {
-    "idea": "Tool calling does not let a model execute Python. The model only proposes a tool name and arguments; your application decides whether the request is valid, runs the function, and returns the result.",
-    "example": "If a student asks for 37 × 19, the model may request calculator(a=37, b=19). Python checks those arguments and performs the multiplication. Only then does the model receive 703.",
+    "idea": "Tool calling does not let the model run code. The model sees a description of a function and can reply with the tool's name and arguments; your program validates that request and runs the real function.",
+    "example": "The model returns a request for calculator with {\"expression\": \"37*19\"}, and calculate() in your code produces 703.",
     "steps": [
-      "Describe the available tool with a schema",
-      "Let the model propose a name and arguments",
-      "Validate, execute, and return the observation"
+      "Send messages plus the tool schemas.",
+      "Validate arguments, then execute the function.",
+      "Append the result as a tool message."
     ],
-    "takeaway": "The model requests capabilities; the host application owns execution and permission.",
-    "notebook": "Follow one calculator request from user message to tool proposal, Python execution, tool result, and final answer."
+    "takeaway": "The model requests; the host executes.",
+    "notebook": "Read the three labelled lines: \"1. model REQUESTS\", \"2. host EXECUTES\" with the result, \"3. model ANSWERS\". Then the four bad requests each come back as a \"Tool error:\" line, with no function run."
   },
   "05_exercise_manual_agent_loop.ipynb": {
-    "idea": "An agent is a controlled loop around a model. On each turn the model either asks for a tool or returns a final answer; the application records the result and decides whether another turn is allowed.",
-    "example": "A research assistant may search, read one result, notice missing evidence, search again, and then answer. That sequence emerges one bounded step at a time.",
+    "idea": "After one tool result the model may ask for another tool or may answer. Repeating that until it answers is the agent loop, and your code owns the step limit and the checks on every request.",
+    "example": "Asked \"What is an agent, and what is 12 * 9?\", run_agent uses search_local_notes and calculator across separate steps, then gives one answer.",
     "steps": [
-      "Ask the model for the next action",
-      "Validate and execute an allowed tool, then append its result",
-      "Stop on a final answer, a bad request, or the step limit"
+      "Call the model with the tool schemas.",
+      "Stop when no tool calls remain.",
+      "Execute the tool; repeat within max_steps."
     ],
-    "takeaway": "The loop—not the prompt alone—creates agentic behaviour. Python must own termination and failure handling.",
-    "notebook": "Write run_agent yourself, run the scripted check, then compare with the reference solution that the rest of the day uses. Watch the trace with two real tools, force the step limit, and catch a stuck model."
+    "takeaway": "The model chooses the next action; your loop decides when to stop.",
+    "notebook": "Fill in the run_agent stub first and run the check cell; unfinished code prints a hint, a working loop prints \"PASS\". Then read the reference solution line by line and re-run the check."
   },
   "06_langgraph_agent.ipynb": {
-    "idea": "LangGraph represents the same agent loop as explicit state, nodes, and transitions. It becomes useful when the workflow needs branching, checkpoints, resumability, or inspection.",
-    "example": "A model node can route to a tool node when a tool is requested, or to END when an answer is ready. The shared state carries the messages between them.",
+    "idea": "LangGraph writes the loop you already built as explicit state, nodes, and edges. model_node calls the model, tool_node validates and executes, route decides where to go next.",
+    "example": "The route function is the same if/else as your loop: go to END on a final answer, go to \"tools\" while steps remain.",
     "steps": [
-      "Define the state that survives between steps",
-      "Implement model and tool nodes",
-      "Connect them with conditional transitions"
+      "Define AgentState holding messages, steps, status.",
+      "Add model and tool nodes.",
+      "Route conditionally back to model or END."
     ],
-    "takeaway": "A framework organizes a loop you already understand; it does not remove the need to design that loop.",
-    "notebook": "Compare the graph with the previous manual loop and map each node and edge to the corresponding Python responsibility."
+    "takeaway": "The framework organises the control flow; tools, validation, and the step limit stay yours.",
+    "notebook": "The graph prints status completed with the same answer as your loop, and the roles list shows system, user, assistant, tool, assistant."
   },
   "07_project_research_assistant.ipynb": {
-    "idea": "This project combines model calls, structured tool requests, bounded iteration, and visible evidence into a small research assistant. The aim is a dependable process, not an impressive-looking answer.",
-    "example": "Given a question, the assistant chooses from supplied research tools, records what each tool returned, and produces an answer that can be inspected.",
+    "idea": "The project wires the pieces together: the bounded loop, two safe tools, and a strict final contract. The assistant is then judged by its evidence and trace, not by how fluent the paragraph sounds.",
+    "example": "research(\"What is structured output, and what is 144 / 12?\") searches the course notes, runs the calculator, and returns a validated ResearchSummary.",
     "steps": [
-      "Accept a focused research question",
-      "Collect evidence through bounded tool use",
-      "Return an answer with a trace of the work"
+      "Run run_agent with the strict response format.",
+      "Validate the final answer into ResearchSummary.",
+      "Score a suite; check three failure layers."
     ],
-    "takeaway": "A useful agent is a model embedded in a controlled application workflow.",
-    "notebook": "Run the complete path, then deliberately trigger a tool error or step limit and explain how the system responds."
+    "takeaway": "Fluency is not evidence; the trace is.",
+    "notebook": "The suite table prints status, the tools used, and PASS or CHECK for each question. The last cell names three failures by layer: tool layer, loop layer, output layer."
   },
   "01_documents_and_chunks.ipynb": {
-    "idea": "A model cannot use private course documents unless the application places relevant text in its context. Retrieval begins by turning documents into smaller, labelled units called chunks.",
-    "example": "A 40-page handbook is too broad to insert for every question. Splitting it by headings lets the system retrieve only the attendance or laboratory-safety section.",
+    "idea": "Before anything can be searched or cited, documents have to be cut into small labelled pieces called chunks. A chunk carries its text plus a record of where that text came from.",
+    "example": "The three campus Markdown files are split at every `##` heading, producing 15 chunks with ids like `battery_safety:data-retention`.",
     "steps": [
-      "Load and clean the source documents",
-      "Split at meaningful boundaries",
-      "Attach source and section metadata to every chunk"
+      "Read the three Markdown files from disk",
+      "Split each file at every ## heading",
+      "Store text with source, title, section, chunk_id"
     ],
-    "takeaway": "A chunk is a retrievable unit with provenance, not an arbitrary slice of characters.",
-    "notebook": "Inspect the supplied documents and verify that every generated chunk still identifies where it came from."
+    "takeaway": "A chunk is text plus provenance; text with no source and section cannot be cited or evaluated.",
+    "notebook": "Read the 15-row chunk table and the one chunk printed in full. Then watch the blind 250-character slices split the five-continuous-minutes reconnection rule across two pieces, while the heading chunk keeps it whole."
   },
   "02_keyword_search.ipynb": {
-    "idea": "Keyword search ranks chunks by matching words. It is simple, fast, and explainable, which makes it a useful baseline before adding embeddings.",
-    "example": "A question containing “protective earth” will rank a chunk containing those exact words highly, but may miss another chunk that only says “ground connection.”",
+    "idea": "The simplest retriever counts how many meaningful words a question and a chunk share, and ranks by that count. It works only when the question happens to use the document's own vocabulary.",
+    "example": "\"At what temperature does charging stop with a warning?\" shares words like charging, temperature and warning with the Warning and shutdown section, so that section ranks first.",
     "steps": [
-      "Normalize the query and chunk words",
-      "Count or weight their overlap",
-      "Rank chunks and inspect the scores"
+      "Lowercase and split text into words",
+      "Drop stopwords and very short words",
+      "Rank chunks by shared word count"
     ],
-    "takeaway": "Start with the simplest retriever that can be measured; complexity is useful only when it improves known failures.",
-    "notebook": "Find one query keyword search handles well and one meaning-based match it misses."
+    "takeaway": "Word overlap measures shared vocabulary, not shared meaning.",
+    "notebook": "Ask \"What keeps running during a blackout?\" and watch every chunk score 0, including `solar_microgrid:load-priorities`, which actually holds the answer. Reword the question in the document's own terms and the same retriever puts it first."
   },
   "03_embeddings_and_semantic_search.ipynb": {
-    "idea": "An embedding converts text into a vector whose position roughly represents meaning. Semantic search compares query and chunk vectors, allowing related wording to match without sharing exact terms.",
-    "example": "“How do I ground the device?” may retrieve a passage about a “protective earth connection” even though the phrases differ.",
+    "idea": "An embedding turns a piece of text into a list of numbers so that texts with similar meaning end up close together. Search then means finding the closest vectors to the question's vector.",
+    "example": "The hash embedder makes 512 numbers by hashing words, so it is word overlap in disguise; a trained sentence-transformer connects \"blackout\" with \"islanded operation\" without sharing a single word.",
     "steps": [
-      "Embed each chunk once",
-      "Embed the incoming question",
-      "Rank chunks by vector similarity"
+      "Embed every chunk once into the index",
+      "Embed the question into one vector",
+      "Sort chunks by similarity, return top-k"
     ],
-    "takeaway": "Embeddings improve meaning-based matching, but a high similarity score is not proof that a passage answers the question.",
-    "notebook": "Compare keyword and semantic rankings for the same queries and inspect both improvements and surprising matches."
+    "takeaway": "The embedder creates the vectors; the index stores and ranks them. Swapping one does not touch the other.",
+    "notebook": "In the three-retriever table, the expected chunk sits far down for keyword and hash but reaches rank 1 for the semantic embedder. Then note that the unanswerable purchase-price question still gets a comfortably positive top score."
   },
   "04_exercise_rag_context.ipynb": {
-    "idea": "Retrieval-augmented generation (RAG) retrieves relevant evidence and places it in the model prompt before asking for an answer. Retrieval supplies context; the model turns that context into a response.",
-    "example": "For a campus-policy question, Python retrieves three handbook chunks, labels them as evidence, and instructs the model to answer only from those passages.",
+    "idea": "RAG is retrieval plus a prompt: fetch a few chunks, label them as evidence, and tell the model to answer only from them. Nothing is trained, and the step in the middle is the function you write.",
+    "example": "`build_context` renders each retrieved chunk as `[chunk_id] source | title | section` followed by its text, and skips whole any chunk that will not fit the character budget.",
     "steps": [
-      "Retrieve a small set of relevant chunks",
-      "Assemble a labelled context within a budget",
-      "Generate an answer grounded in that context"
+      "Retrieve the top three chunks for the question",
+      "Assemble labelled blocks within the character budget",
+      "Prompt the model to answer only from evidence"
     ],
-    "takeaway": "RAG is an application pipeline, not a special kind of model.",
-    "notebook": "Trace the question, retrieved chunks, assembled prompt, and answer as four distinct objects. This section also holds the day's hands-on exercise: Implement build_context, run the check, then read the reference solution to see how skipping a chunk keeps every citation verifiable."
+    "takeaway": "Retrieval picks the candidates; the context you build decides what the model is actually allowed to use.",
+    "notebook": "Try the stub first, run the behavioural check, then read the reference solution. The check should print PASS with the `c:noise` distractor skipped entirely, and later a smaller budget drops the lowest-ranked passage whole."
   },
   "05_citations_and_abstention.ipynb": {
-    "idea": "A grounded assistant should show which evidence supports its claims and decline when the available evidence is insufficient. Citations aid inspection; abstention prevents confident guessing.",
-    "example": "If the retrieved handbook explains lab timings but says nothing about hostel fees, the assistant should cite the timings section and refuse to invent a fee amount.",
+    "idea": "Ask the model for a fixed shape instead of free text: an answer, a list of citations, and an abstained flag. Then check every citation against the chunks you actually retrieved.",
+    "example": "A tampered answer cites `battery_safety:appendix-c`, a section that never existed, so validation drops it and marks the answer `grounded=False`.",
     "steps": [
-      "Give every chunk a stable source label",
-      "Require claims to reference those labels",
-      "Return ‘insufficient evidence’ when support is missing"
+      "Ask the model for schema-shaped JSON",
+      "Drop citations missing from the retrieval log",
+      "Set grounded from what survived validation"
     ],
-    "takeaway": "A citation is useful only when it points to evidence that actually supports the statement.",
-    "notebook": "Test one answerable and one unanswerable question, then verify every citation against the retrieved text."
+    "takeaway": "The model makes claims; only the application can verify them, so `grounded` is computed by us and never asked of the model.",
+    "notebook": "On the purchase-price question, look for `abstained: True` with zero citations, which counts as a successful result. On the tampered answer, look for `appendix-c` appearing in dropped and `grounded: False`."
   },
   "06_retrieval_evaluation.ipynb": {
-    "idea": "A bad RAG answer can fail because retrieval selected the wrong evidence or because generation misused good evidence. Evaluate these stages separately so you fix the correct component.",
-    "example": "If the correct policy chunk never appears in the top results, rewriting the answer prompt cannot solve the retrieval failure.",
+    "idea": "Score retrieval and answers as two separate reports over a fixed set of questions whose evidence you already know. Then a failure tells you which layer to fix.",
+    "example": "Ten golden cases: nine answerable, plus \"What is the purchase price of the battery system?\", which is deliberately not in the corpus.",
     "steps": [
-      "Create questions with known relevant chunks",
-      "Measure whether retrieval finds them",
-      "Evaluate answer quality only after evidence quality"
+      "Search each golden question, record source and section hits",
+      "Score answers for abstention, citations, essential terms",
+      "Compare both reports to name the failing layer"
     ],
-    "takeaway": "Separating retrieval metrics from answer metrics makes RAG debugging actionable.",
-    "notebook": "Use the small golden set to locate a retrieval failure and explain whether chunking, ranking, or generation should change."
+    "takeaway": "A wrong answer is either a retrieval failure or a generation failure, and one merged number hides which.",
+    "notebook": "The unanswerable case prints `n/a`, not a hit, so retrieval rates stay honest. Swapping only the embedder flips the missing `section_hit` values from NO to yes, and the top-k sweep shows recall flattening while context cost keeps climbing."
   },
   "07_retrieval_tool_and_state.ipynb": {
-    "idea": "Retrieval can be exposed as a tool, allowing an agent to search only when needed. The application should keep queries, results, and citations in visible state so the process remains inspectable.",
-    "example": "The agent may first search for laboratory access rules, inspect weak results, then issue a narrower query before answering.",
+    "idea": "Instead of always retrieving, offer document search as a tool the model can decide to call. The application keeps its own state object and prints it after every step.",
+    "example": "`search_engineering_documents` is read-only, so a planted scratch chunk saying \"IGNORE ALL PREVIOUS INSTRUCTIONS\" comes back as a quotation rather than an order.",
     "steps": [
-      "Define a retrieval tool with a narrow schema",
-      "Record each query and returned chunk",
-      "Treat retrieved text as untrusted evidence, not instructions"
+      "Register read-only search as a tool",
+      "Run the loop, printing state each step",
+      "Validate citations against the retrieval log"
     ],
-    "takeaway": "Agentic RAG adds decision-making around retrieval, along with new state and prompt-injection risks.",
-    "notebook": "Follow two retrieval attempts and identify how the application distinguishes document content from trusted system instructions."
+    "takeaway": "Context is what you send in one call, state is what the application owns during the run, and memory is what survives between runs.",
+    "notebook": "Watch the step lines: the model requests `search_engineering_documents`, then `STATE -> status=retrieved` lists the chunk ids. In the poisoned run, the marker scan flags `scratch:maintenance-note` while the answer only quotes it."
   },
   "08_project_knowledge_assistant.ipynb": {
-    "idea": "This project builds an engineering knowledge assistant that searches supplied documents, answers from evidence, cites sources, and abstains when necessary.",
-    "example": "A user asks a maintenance question; the assistant retrieves manual sections, returns a concise procedure, and shows the exact source labels used.",
+    "idea": "Assemble every layer into one assistant, measure it on the golden set, change exactly one layer, then measure again. The two scorecards are what makes the change defensible.",
+    "example": "The baseline deliberately runs on the weaker hash embedder; the diagnosis says representation, so the embedder is swapped (or `top_k` widened when the trained model could not load) and both scorecards are re-run.",
     "steps": [
-      "Prepare searchable, labelled chunks",
-      "Retrieve and assemble bounded evidence",
-      "Answer with citations or abstain"
+      "Assemble the assistant on the weaker baseline",
+      "Run both scorecards over ten cases",
+      "Change one layer, then re-measure both"
     ],
-    "takeaway": "A trustworthy knowledge assistant exposes its evidence path instead of relying on the model’s general memory.",
-    "notebook": "Run the project against both supported and unsupported questions and inspect the complete retrieval trace."
+    "takeaway": "A fix you cannot show as before-and-after numbers on both reports is not a fix.",
+    "notebook": "Read the FAILING CASES block, which names each failing id and the layer that owns it. Then check `section_hit` moving NO to yes with the expected chunk's rank change, and whether any case still covers zero essential terms once its section is retrieved."
   },
   "01_conversation_history.ipynb": {
-    "idea": "Models are stateless between API calls. A conversation appears continuous only because the application resends selected earlier messages with each new request.",
-    "example": "When a user says “use the same unit,” the model understands only if the earlier unit preference is included again or stored elsewhere.",
+    "idea": "The model remembers nothing between calls. Your program keeps the conversation as a list of messages and resends that list every time.",
+    "example": "Like a receptionist with no notepad: whatever you do not repeat, they cannot recall. The notebook's five-line answer_from stub reads only the list it is handed, exactly like one model call.",
     "steps": [
-      "Store messages in application state",
-      "Select the history needed for the next call",
-      "Distinguish conversation history from durable user memory"
+      "Keep messages in a list you own",
+      "Send the whole list with each question",
+      "Append the reply; the list grows longer"
     ],
-    "takeaway": "History is context managed by the application, not memory living inside the model.",
-    "notebook": "Inspect exactly what is sent on the second turn and remove an earlier message to see what the model can no longer infer."
+    "takeaway": "\"The model forgot\" almost always means \"my code did not send it\".",
+    "notebook": "Compare the WITH history and WITHOUT history lines: one answers \"Aurora\", the other says the fact is not in the messages you sent. Then watch the character count climb after every turn in Step 4."
   },
   "02_exercise_context_compaction.ipynb": {
-    "idea": "Conversation history eventually exceeds useful context and cost limits. Compaction replaces older details with a smaller summary while retaining recent messages and important state.",
-    "example": "Ten planning turns may become one summary of decisions plus the two latest messages, reducing size while preserving the current task.",
+    "idea": "A history that grows forever costs more on every call, so the program sets a token budget and trims. Compaction keeps the newest turns word-for-word and replaces the older ones with one short summary.",
+    "example": "Like packing a small bag: recent clothes go in whole, everything older is squeezed into a single note. Here twenty messages are squeezed to fit a 200-token budget.",
     "steps": [
-      "Choose what must be preserved verbatim",
-      "Summarize older resolved information",
-      "Keep recent and safety-critical state separately"
+      "Estimate tokens; compare against the budget",
+      "Keep newest whole messages that still fit",
+      "Replace older turns with one summary"
     ],
-    "takeaway": "Compaction is lossy; its preservation rules must be explicit and tested.",
-    "notebook": "Compare full and compacted histories and list any fact, approval, or unresolved action that must not disappear. This section also holds the day's hands-on exercise: Complete compact_history, run the check, then compare with the reference solution and its note on what must never be summarized away."
+    "takeaway": "Compaction is lossy, so a fact you must not lose belongs in a store, not a summary.",
+    "notebook": "Try the compact_history stub, run the behavioural check until it prints PASS, then read the reference solution. Look at the BEFORE and AFTER token counts, and at \"deadline still present in the text? False\"."
   },
   "03_custom_persistent_memory.ipynb": {
-    "idea": "Persistent memory stores selected information across sessions. A transparent implementation makes it clear what is written, retrieved, updated, and deleted.",
-    "example": "The agent may remember a preferred measurement unit, but should not save every casual sentence or an unverified inference about the user.",
+    "idea": "Memory is a small set of chosen facts kept in a store you control, separate from the conversation. Every record says whose it is, where it came from, and when it was written.",
+    "example": "A doctor's file card, not a recording of every visit. The notebook stores \"Prefer meetings after 10:00\" for the fictional user asha in SQLite.",
     "steps": [
-      "Extract a candidate memory",
-      "Validate and store it with provenance",
-      "Retrieve only memories relevant to the current task"
+      "Save selected facts with user and source",
+      "Search a few matching records per request",
+      "Update or delete records on request"
     ],
-    "takeaway": "Useful memory is selective, editable, and separate from raw conversation history.",
-    "notebook": "Create, retrieve, update, and delete a synthetic preference while inspecting the underlying store."
+    "takeaway": "Search ranks text by similarity; it cannot decide which stored statement is true.",
+    "notebook": "Watch Omar's search return nothing for Asha's preference: isolation holds because every method takes a user_id. Then watch two contradictory meeting-time records both come back from one query, until the written rule deletes the older one."
   },
   "04_mem0_platform.ipynb": {
-    "idea": "Mem0 is a managed memory system that automates extraction, storage, and retrieval. Comparing it with a small custom store reveals what a platform provides and what control it hides.",
-    "example": "Instead of writing storage and relevance logic yourself, you submit messages and the platform identifies candidate memories for a user.",
+    "idea": "A hosted memory service pulls candidate facts out of raw conversation and stores them for you. It removes schema, extraction and retrieval code, not consent, isolation, retention or deletion.",
+    "example": "Like renting a warehouse instead of using a cupboard: someone else handles the shelving, but the goods are still yours to account for, and a second copy now sits outside your control.",
     "steps": [
-      "Observe the managed memory workflow",
-      "Compare its records with the transparent local store",
-      "Identify privacy, cost, and control trade-offs"
+      "Send raw messages to the hosted service",
+      "Service extracts and stores the fact",
+      "Compare cost, control and portability yourself"
     ],
-    "takeaway": "A memory platform is infrastructure around model calls; it does not decide your product’s memory policy for you.",
-    "notebook": "Use the optional platform path if available, otherwise study the captured result and compare both designs."
+    "takeaway": "A managed product removes plumbing, never accountability.",
+    "notebook": "Nothing here is assessed and it runs with no key: look for \"Hosted call skipped\" and the captured add() reply turning a chat sentence into \"Prefers meetings after 10:00\". Then read the trade-off table, especially the last row, where consent and isolation stay your responsibility either way."
   },
   "05_small_plans.ipynb": {
-    "idea": "A plan is a model-generated proposal for future steps. Keeping plans short, structured, and visible makes them easier to inspect and revise before execution.",
-    "example": "For arranging a meeting, the agent may propose: check availability, draft options, request approval, then send—without performing those actions yet.",
+    "idea": "A plan is a short, readable list of the steps an agent intends to take, printed before anything runs. It is a proposal, and the step limit lives in Python where nothing can argue with it.",
+    "example": "Like a builder's written quote listing the jobs: reading it changes nothing until you sign. The notebook's pushy_plan demands an immediate send with no checks.",
     "steps": [
-      "Ask for a bounded structured plan",
-      "Validate allowed step types and limits",
-      "Execute one approved step at a time"
+      "Turn a goal into bounded numbered steps",
+      "Label each step by its effect",
+      "Print the plan before anything runs"
     ],
-    "takeaway": "Planning helps organize work, but a plan is neither permission nor proof that a step succeeded.",
-    "notebook": "Inspect a plan containing an unsafe or unsupported step and see where application validation rejects it."
+    "takeaway": "A plan is not permission.",
+    "notebook": "Watch max_steps=100 still return 5 steps, and the agree column print NO where the keyword guess disagrees with the label the engineer chose. The pushy plan ends with \"emails sent by running this cell: 0\"."
   },
   "06_tools_with_side_effects.ipynb": {
-    "idea": "Some tools only read information; others change the outside world. Sending a message, modifying a file, or creating a booking requires stronger controls than search.",
-    "example": "Searching a calendar is reversible and read-only. Sending invitations affects other people and should require a preview, approval, and a record of the exact action.",
+    "idea": "Tools that change things are not all alike: reading, drafting, sending and deleting carry four different risks. The engineer writes down a risk class for each tool before the model is shown any of them.",
+    "example": "A draft can be thrown away and nobody outside ever saw it, but send_email leaves the machine and delete_all_tasks empties the task list for good.",
     "steps": [
-      "Label each tool by capability and side effect",
-      "Prepare an exact action before execution",
-      "Apply approval and idempotency checks"
+      "Classify each tool by risk beforehand",
+      "Register tools with schemas and argument models",
+      "Call one and inspect the changed state"
     ],
-    "takeaway": "Risk follows the real effect of a tool, not how harmless its name sounds.",
-    "notebook": "Compare read-only and side-effecting tools and trace the safeguards that run before each handler."
+    "takeaway": "Argument validation checks shape; it never checks whether the action is allowed.",
+    "notebook": "Watch the counters printed by show(): two reads change nothing, create_draft adds a draft, send_email adds to sent. Then watch Day 1's loop finish \"Delete every task\" with perfectly valid arguments and an emptied task list."
   },
   "07_permissions_and_approval.ipynb": {
-    "idea": "Guardrails are controls around what enters the system, what the model may propose, and what the application may execute. Human approval is one important guardrail for consequential actions.",
-    "example": "Approve ‘send this exact draft to these two addresses,’ not the vague instruction ‘send it.’ If the content or recipients change, the approval no longer applies.",
+    "idea": "One table written by an engineer maps every tool to allow, approval or deny, and anything not in the table is denied. For consequential actions the runtime stores the exact payload and pauses for a human.",
+    "example": "Like a bank teller: small withdrawals go straight through, a large one needs a signature on that exact slip, and some requests are simply refused. Here view_calendar runs, send_email pauses, delete_all_tasks is denied.",
     "steps": [
-      "Check whether the capability is allowed",
-      "Show the exact proposed action to the user",
-      "Execute only a matching approved action ID"
+      "Look up the proposed tool in policy",
+      "Store exact payload and pause for approval",
+      "Re-check policy on resume, then execute"
     ],
-    "takeaway": "The model can propose an action; policy and the user authorize it.",
-    "notebook": "Try modifying an action after approval and verify that the policy blocks execution. The worked Try-it implements evaluate_action: proposals are not permissions."
+    "takeaway": "A model can propose anything; only code decides what runs.",
+    "notebook": "\"Please tidy my workspace but do not delete anything\" makes the proposer ask for delete_all_tasks, a tool it was never offered, and policy returns denied with the tasks intact. In Step 6 the rules tighten while the action is paused, the human approves, and the outbox still stays empty."
   },
   "08_observability_and_safety_evaluation.ipynb": {
-    "idea": "Observability records what the system did; evaluation judges whether that behaviour was good. Together they turn failures into evidence that can be diagnosed and improved.",
-    "example": "A trace shows the prompt, tool request, policy decision, latency, and result. A safety test then checks whether an unapproved email was correctly blocked.",
+    "idea": "The runtime appends an event for every decision it makes, so anyone can read what happened without reading the source. A fixed set of cases then checks whether those outcomes were the right ones.",
+    "example": "The event trace is the flight recorder; the twelve safety cases are the pre-flight check. Two of those cases carry the attack inside a calendar note and a stored memory record instead of the chat box.",
     "steps": [
-      "Emit structured events at important boundaries",
-      "Inspect traces in local logs or LangSmith",
-      "Run repeatable safety and quality cases"
+      "Record an event for every decision",
+      "Resolve each approval id only once",
+      "Run twelve cases; count side effects"
     ],
-    "takeaway": "Logs explain a run; evaluations compare behaviour against expectations across many runs.",
-    "notebook": "Follow one action through its trace and connect every safety assertion to the event that proves it."
+    "takeaway": "A trace tells you what happened; only an evaluation tells you whether it was right.",
+    "notebook": "The poisoned calendar note gets the model to propose emailing attacker@example.test, and it stops at pending_approval with that address visible on the approval card. The suite prints 12/12 matched and \"total side effects: 0\", and that zero is the number that must never move."
   },
   "09_project_safe_task_agent.ipynb": {
-    "idea": "This project combines history, persistent preferences, planning, tools, guardrails, approval, and traces in a personal task agent.",
-    "example": "The agent remembers a harmless preference, proposes a task action, shows a preview, waits for approval, and records whether execution occurred.",
+    "idea": "One run joins every layer of the day: compacted history and retrieved memory go in, a plan is printed, the model proposes, policy decides, a human answers, and events record it.",
+    "example": "The agent is asked to send a concise project update to a mentor. It pauses, the human says no, and the outbox stays empty.",
     "steps": [
-      "Build context from history and relevant memory",
-      "Generate and validate a small plan",
-      "Gate side effects and log every decision"
+      "Build context from compaction and memory",
+      "Print plan, then let model propose",
+      "Apply policy, ask human, record events"
     ],
-    "takeaway": "Safety is a sequence of enforceable application boundaries, not a warning placed in the prompt.",
-    "notebook": "Run one permitted and one blocked scenario and explain the state transition at the approval boundary."
+    "takeaway": "The model proposes, policy and the human decide, and the system is judged by its side effects.",
+    "notebook": "Three failures run one after another, a rejection, a destructive request with an authority claim, and an injection hidden in retrieved data, and each ends with an empty outbox and intact tasks. Then watch the run assert that total side effects is 0, and a second approval of the same action id send nothing more."
   },
   "01_seeded_artifact_and_golden_set.ipynb": {
-    "idea": "Before adding multiple agents, define a task whose quality can be measured. A seeded artifact contains known issues, and a golden set records which findings a good review should recover.",
-    "example": "A design document deliberately contains three known problems. Review systems are compared by which problems they find, miss, or invent.",
+    "idea": "You cannot say a review was good without something to check it against. The notebook writes one deliberately defective Python file, hides a list of the nine defects seeded in it, and scores any review against that list.",
+    "example": "Like marking an exam with an answer key the candidate never sees. Here the key is golden_defects.json: nine defects, each with a category, a line number and a severity.",
     "steps": [
-      "Create a stable review artifact",
-      "Record expected findings independently",
-      "Define scoring before comparing architectures"
+      "Write the defective artifact, printed with line numbers.",
+      "Define the Finding contract with evidence and line.",
+      "Score findings against the hidden golden set."
     ],
-    "takeaway": "Without a measurable baseline, extra agents can look sophisticated without being better.",
-    "notebook": "Inspect the artifact and golden set before running any reviewer, then identify what counts as a true and false finding."
+    "takeaway": "\"The review looked thorough\" is not a measurement; recall against a hidden answer key is.",
+    "notebook": "Read the printed golden set of nine seeded defects, then the score of your own two hand-written findings. The numbers to watch are recall, false_positives and the missed list."
   },
   "02_single_reviewer_baseline.ipynb": {
-    "idea": "A single model reviewer is the simplest solution to the review task. It establishes quality, cost, and latency numbers that a multi-agent design must justify improving.",
-    "example": "One reviewer reads the entire design and returns structured findings with severity, evidence, and recommendations.",
+    "idea": "The simplest system that could work is one reviewer, one model call, no tools and no supervisor. Every larger system today has to beat its number.",
+    "example": "In the blind_spots world the single general reviewer finds 5 of the 9 defects, and three of the misses are security or correctness problems it never looks at.",
     "steps": [
-      "Give one reviewer the complete task",
-      "Validate its structured findings",
-      "Score results against the golden set"
+      "Build one request shape with a strict schema.",
+      "Validate the reply into Finding records.",
+      "Run one call, then score its findings."
     ],
-    "takeaway": "Multi-agent complexity is warranted only when it beats a well-designed single-agent baseline on a meaningful objective.",
-    "notebook": "Record what the single reviewer finds, misses, costs, and how long it takes."
+    "takeaway": "The baseline is the thing to beat, so change one variable at a time: the reviewer or the architecture, never both.",
+    "notebook": "Watch the 5/9 recall and the printed missed list. Then watch the deliberately broken model: review_with_fallback prints one line about the 503 and the run continues."
   },
   "03_deterministic_checks.ipynb": {
-    "idea": "Some review rules are exact enough for ordinary code. Deterministic checks are faster, cheaper, and repeatable, leaving model judgment for ambiguous issues.",
-    "example": "Python can reliably detect a missing required section or value outside an allowed range; an LLM is better reserved for unclear reasoning or conflicting requirements.",
+    "idea": "Some defects are facts, not opinions: ordinary code can prove that a file calls eval, has a mutable default argument, or swallows every exception. Prove those for free and spend model calls on what is left.",
+    "example": "Like running a spell-checker before handing a draft to a proof-reader. Here ast walks the syntax tree and establishes three defects in a fraction of a millisecond, at zero tokens.",
     "steps": [
-      "Separate exact rules from judgment calls",
-      "Implement exact rules as functions",
-      "Merge their evidence with model findings"
+      "Walk the syntax tree for three provable patterns.",
+      "Time the pass and record zero tokens.",
+      "Concatenate checks with reviewer findings, then score."
     ],
-    "takeaway": "Use models where interpretation is needed, not where a simple rule is stronger.",
-    "notebook": "Compare deterministic findings with the reviewer output and identify duplicated or complementary work."
+    "takeaway": "Free overlap between a parser and a reviewer is fine; paying a second model call to rediscover a proven fact is waste.",
+    "notebook": "Recall moves from 5/9 to 6/9 for 0 extra calls and 0 extra tokens. Also note the 2 duplicates in the combined pile, because nothing merges them yet."
   },
   "04_parallel_specialist_reviewers.ipynb": {
-    "idea": "Specialist agents divide a broad review into narrow perspectives. They may run independently, but parallelism adds cost, latency coordination, and duplicate findings.",
-    "example": "A safety reviewer checks hazards while a requirements reviewer checks completeness. Both inspect the same artifact through different instructions.",
+    "idea": "Three narrow reviewers, one for correctness, one for security, one for maintainability, read the same file and answer different questions about it. Four words describe how this works: shared state, fan-out, handoff, fan-in.",
+    "example": "Three inspectors walk the same building, one on wiring, one on plumbing, one on fire exits, and each hands in a form. Here the shared state is one immutable string and the handoff is a Finding record, with no prompt, reasoning or chat history attached.",
     "steps": [
-      "Give each specialist a distinct responsibility",
-      "Run the same contracts sequentially first",
-      "Parallelize only independent work and tolerate failures"
+      "Send three roles over the same immutable source.",
+      "Run them sequentially, then in three threads.",
+      "Compare wall clock, model calls and tokens."
     ],
-    "takeaway": "Multiple agents are useful when decomposition creates genuinely different expertise or context—not merely more model calls.",
-    "notebook": "Inspect each specialist’s scope and measure overlap before and after parallel execution."
+    "takeaway": "Parallel execution buys wall-clock time only; it does not reduce calls, tokens or cost.",
+    "notebook": "Look at the sequential-versus-parallel table: wall clock falls from about 0.9 s to about 0.3 s while model calls, tokens and findings stay identical. The worked solution repeats it at max_workers 1, 2 and 3."
   },
   "05_exercise_supervisor_synthesis.ipynb": {
-    "idea": "A supervisor combines specialist outputs into one coherent result. It must handle duplicates, conflicts, missing reviewers, and provenance without hiding disagreement.",
-    "example": "Two specialists may describe the same grounding defect with different wording. The supervisor merges it once while retaining both evidence references.",
+    "idea": "Four branches produce twelve findings for nine defects, several describing the same problem under different ids. The fan-in step, the supervisor, has to merge, rank, cap, stop, and say what it did.",
+    "example": "The parser calls the line-20 problem AST-EVAL-20 and the model calls it MODEL-SEC-20-3. Same defect, two ids, two entries in the report unless a rule collapses them.",
     "steps": [
-      "Normalize and validate specialist results",
-      "Deduplicate and resolve conflicts",
-      "Produce a ranked report with provenance"
+      "Collect findings, skipping branches that reported an error.",
+      "Merge duplicates by id or by location.",
+      "Rank by severity, cap, report what dropped."
     ],
-    "takeaway": "Coordination is a data-merging problem as much as a prompting problem.",
-    "notebook": "Trace a finding from each specialist into the final report and verify that failures remain visible. This section also holds the day's hands-on exercise: Complete merge_findings, run the check including the severity-versus-id case, then compare with the reference solution."
+    "takeaway": "Merging and capping are judgement calls that can delete real defects, so neither may ever be silent.",
+    "notebook": "Fill in the merge_findings stub, run the behavioural check until it prints PASS, then read the reference solution line by line. After that, look at the false merge, where two genuinely different security defects one line apart come out as one."
   },
   "06_comparative_evaluation.ipynb": {
-    "idea": "Architecture decisions should compare quality, cost, latency, and failure behaviour under the same test set. An LLM judge can assist with nuanced scoring, but deterministic checks and human inspection remain anchors.",
-    "example": "Compare one reviewer with three specialists: the team may find one additional issue but cost three times as much and introduce duplicates.",
+    "idea": "The three systems are scored on the same artifact against the same hidden answer key, twice: once with a reviewer that has blind spots, once with a reviewer that is already strong. The winner is not the same both times.",
+    "example": "In blind_spots the team lifts 5/9 to 9/9 for 3 calls. In strong_generalist it finds 8/9, exactly what one reviewer found, for three times the tokens.",
     "steps": [
-      "Run each architecture on identical cases",
-      "Use deterministic metrics and a bounded judge rubric",
-      "Choose based on measured trade-offs"
+      "Assemble the three systems from earlier sections.",
+      "Score each run into one number row.",
+      "Repeat with the second reviewer and compare."
     ],
-    "takeaway": "An LLM judge supplies another probabilistic opinion; a council supplies several. Neither is automatic ground truth.",
-    "notebook": "Read the comparison table and decide whether the multi-agent gain is worth its added cost and complexity."
+    "takeaway": "A win is meeting the quality bar with the smallest system, not finding the most defects.",
+    "notebook": "Read the two scenario tables side by side: in strong_generalist the single reviewer matches the team's 8/9 for one call instead of three. Then read the five printed reasons a team is not worth building."
   },
   "07_project_engineering_review_team.ipynb": {
-    "idea": "This project assembles deterministic checks, specialist reviewers, and supervisor synthesis into an engineering design review team with measurable output.",
-    "example": "The system reviews one design artifact, gathers findings from focused reviewers, merges overlaps, and produces a report linked to evidence.",
+    "idea": "Run all three systems in both worlds, check that each stayed inside its structural bounds, then turn the measured numbers into a deployment decision and a short memo.",
+    "example": "recommend(rows, minimum_recall) picks the smallest system clearing a stated bar. At a bar of 0.85 a system is chosen for each world; at a bar of 1.0 the strong_generalist world has no option left.",
     "steps": [
-      "Run exact checks and specialist reviews",
-      "Collect structured results even when one fails",
-      "Synthesize, score, and compare with the baseline"
+      "Run three systems across both reviewer scenarios.",
+      "Assert the bounds, then read the trace.",
+      "Apply the quality bar, write the memo."
     ],
-    "takeaway": "A multi-agent system is an explicit coordination architecture, not a group chat between personas.",
-    "notebook": "Run the complete review and explain which parts truly needed models, multiple specialists, or only Python."
+    "takeaway": "Assert structure, measure quality; never assert that the team wins.",
+    "notebook": "Watch the bounds OK line printed for every run, then the recommendation flipping between the two scenarios and flipping again to \"do not deploy\" when the bar moves to 1.0. Finish on the decision memo built from your own numbers."
   },
   "01_what_is_a_harness.ipynb": {
-    "idea": "An AI harness is the reusable runtime around agents. It standardizes how models, tools, permissions, state, logs, limits, and configuration work so every project does not rebuild them differently.",
-    "example": "Instead of each agent inventing its own retry and tool code, both a research agent and maintenance agent run through the same controlled runtime.",
+    "idea": "A runtime is the code that executes one run. A harness is that runtime plus everything around it: configuration, a tool registry, a policy, events and checkpoints.",
+    "example": "research_agent.json holds instructions, an allow-list, a step limit and a model choice. It is an ordinary file, and the same runtime can host it or task_agent.json.",
     "steps": [
-      "Identify responsibilities repeated across earlier projects",
-      "Separate reusable runtime from agent-specific configuration",
-      "Define common execution and event contracts"
+      "Define five dataclasses as the shared contracts.",
+      "Write two agent configurations to JSON files.",
+      "Load a file into an AgentConfig object."
     ],
-    "takeaway": "The harness is infrastructure for running agents consistently; it is not another agent.",
-    "notebook": "Map each harness component back to a problem encountered during Days 1–4."
+    "takeaway": "An agent is a configuration; a runtime is code that executes it.",
+    "notebook": "Read the lineage table that pairs each earlier day's pain with the component that owns it today. Then check the last lines: two agents described end to end with zero agent-specific Python."
   },
   "02_model_configuration_and_runtime.ipynb": {
-    "idea": "Configuration describes what an agent may use and how it should behave; the runtime executes that description. Keeping them separate makes agent variants easier to inspect, test, and change.",
-    "example": "A configuration selects a model, system instruction, tool capabilities, and step budget. The same runner can execute several such configurations.",
+    "idea": "Every model is reached through one method, decide(), which returns a ModelDecision: either 'call this tool' or 'here is the answer'. Swapping models becomes a configuration change instead of a code change.",
+    "example": "MockProvider follows the mock_plan written in the JSON file; LiveProvider wraps the setup cell's chat() call. The runtime cannot tell the two apart.",
     "steps": [
-      "Represent model and agent choices as validated data",
-      "Pass configuration into a shared runner",
-      "Keep secrets and live clients outside configuration files"
+      "Read the provider name from ModelConfig.",
+      "Build the matching adapter with build_provider.",
+      "Call decide, retrying transient failures with backoff."
     ],
-    "takeaway": "Configuration should express policy and choices, while runtime code enforces them.",
-    "notebook": "Create two agent configurations and identify what changes without modifying the runner."
+    "takeaway": "Configuration is data; execution is code, and only one place knows how a provider is reached.",
+    "notebook": "Watch the deliberate typo 'openrouetr' rejected by build_provider with a ValueError before any request is built. Then notice the empty usage record in mock mode: the field exists even when nothing was bought."
   },
   "03_exercise_tool_registry.ipynb": {
-    "idea": "A tool registry is the controlled catalogue connecting model-visible tool descriptions to application-owned Python handlers. It centralizes discovery, validation, and dispatch.",
-    "example": "The registry exposes the schema for search only to an agent granted search capability, then calls the corresponding handler when a valid request arrives.",
+    "idea": "A registry stores each tool with its schema, its function and a risk label. It answers two separate questions: which tools may this agent see, and are these arguments well formed?",
+    "example": "Four tools span four risk levels. research_agent sees only lookup_notes, and erase_workspace is registered but appears on no agent's list.",
     "steps": [
-      "Register schema, handler, and capability together",
-      "Reveal only tools allowed by configuration",
-      "Validate again at dispatch time"
+      "Register each tool spec with its function.",
+      "Discover only the tools this agent allows.",
+      "Check the allow-list and arguments, then run."
     ],
-    "takeaway": "Showing a tool schema and permitting execution are separate security decisions; enforce both.",
-    "notebook": "Register tools, filter their visible schemas, and attempt an ungranted dispatch. This section also holds the day's hands-on exercise: Complete ToolRegistry, run the check (ungranted, unknown, duplicate), then compare with the reference solution's double enforcement."
+    "takeaway": "Hiding a tool is not the same as refusing to run it.",
+    "notebook": "Try the ToolRegistry stub first: write register, discover and call yourself. Run the behavioural check, then read the reference solution and re-run the check until it prints PASS."
   },
   "04_permissions_and_limits.ipynb": {
-    "idea": "A harness applies permissions and resource limits consistently before and during execution. Limits bound damage, cost, and runaway behaviour even when prompts fail.",
-    "example": "An agent may have search permission, no email permission, a five-step limit, and a fixed token or cost budget.",
+    "idea": "Python, not the model, decides whether a proposed action may happen. Each tool's risk level maps to allow, approval or deny, and any label the table does not know is denied.",
+    "example": "send_email is external, so the run stops and writes a checkpoint. erase_workspace is destructive and is denied even when a configuration puts it on the allow-list.",
     "steps": [
-      "Grant the smallest required capabilities",
-      "Check approval for consequential actions",
-      "Enforce step, time, and budget limits in code"
+      "Validate the arguments the model proposed.",
+      "Map the tool's risk to a decision.",
+      "Allow, pause for approval, or deny."
     ],
-    "takeaway": "Permissions decide what may happen; limits decide how much may happen.",
-    "notebook": "Trigger each boundary deliberately and inspect the specific reason the run stops."
+    "takeaway": "A person saying no is cancelled, not failed.",
+    "notebook": "Watch the send_email run stop at pending_approval with the exact arguments printed for a human, then resume with approved=False and end as cancelled. Also watch a config asking for 500 steps run to the effective limit of 10."
   },
   "05_events_logs_and_checkpoints.ipynb": {
-    "idea": "Events record meaningful changes during a run, while checkpoints save enough state to resume or inspect it later. Together they make long workflows observable and recoverable.",
-    "example": "A run emits model_started, tool_requested, policy_denied, and run_finished events; a checkpoint preserves messages and remaining budget after a completed step.",
+    "idea": "Events are append-only observations of what happened, never edited. A checkpoint is the state needed to continue a paused run, and it is deleted the moment it is used.",
+    "example": "events.jsonl gains one JSON line per event as it happens, while the checkpoint folder holds one JSON file per paused run with the exact tool and arguments.",
     "steps": [
-      "Emit structured events with run and step IDs",
-      "Save state only at safe boundaries",
-      "Use traces for debugging, evaluation, and cost attribution"
+      "Append every event to events.jsonl.",
+      "Save the pending action as a checkpoint.",
+      "Load that checkpoint and resume after restart."
     ],
-    "takeaway": "Observability should explain what happened without relying on scattered print statements.",
-    "notebook": "Reconstruct one run from its event sequence and inspect what a checkpoint can—and cannot—safely resume."
+    "takeaway": "Events explain a run; checkpoints continue one.",
+    "notebook": "Watch a brand-new runtime object resume the paused run using only what is on disk. Then, after the checkpoint file is deleted, resume returns failed with 'Checkpoint not found' while the event log still shows the pause."
   },
   "06_mcp_client.ipynb": {
-    "idea": "Model Context Protocol (MCP) standardizes how applications discover and call external tools or resources. It improves interoperability, but the harness must still apply trust and permission rules.",
-    "example": "An MCP server advertises a documentation-search tool. The client discovers its schema, but policy decides whether this agent may see or invoke it.",
+    "idea": "MCP is a standard way for a client to ask a server what it can do, and then ask it to do one thing. The server writes its own description, so your harness decides what that description is worth.",
+    "example": "course_lookup arrives with .name, .description and .inputSchema. You assign it the risk level read yourself; the server never gets a say.",
     "steps": [
-      "Connect and discover server capabilities",
-      "Translate them into controlled registry entries",
-      "Apply validation, permissions, and logging on every call"
+      "List the tools the server advertises.",
+      "Assign a local risk level yourself.",
+      "Ask decide, then call the tool."
     ],
-    "takeaway": "MCP is a communication protocol, not a security boundary or automatic authorization.",
-    "notebook": "Follow discovery and invocation separately, then identify every check that still belongs to the host application."
+    "takeaway": "Discovery is not authorization.",
+    "notebook": "Relabel the same tool from read to external and watch decide flip from allow to approval with the server untouched. If the real stdio server runs, notice it prints the same three attributes as the fake client."
   },
   "07_project_mini_harness.ipynb": {
-    "idea": "The mini harness consolidates the course’s recurring mechanisms into one small runtime: configuration, bounded model loops, governed tools, events, checkpoints, and evaluation hooks.",
-    "example": "Different agents can supply different instructions and tool grants while sharing the same execution, policy, and trace machinery.",
+    "idea": "One registry, one event store and one runtime object serve every agent. Adding an agent means writing a new configuration file, not editing shared code.",
+    "example": "notes_agent.json looks up a course note, then asks for it to be emailed. The runtime allows the lookup and pauses on the email.",
     "steps": [
-      "Load and validate an agent configuration",
-      "Run it through the common governed loop",
-      "Capture events, results, limits, and failures"
+      "Assemble registry, event store and runtime once.",
+      "Run each agent configuration through that runtime.",
+      "Add a third agent as JSON."
     ],
-    "takeaway": "A harness makes safe behaviour repeatable across agents, but this classroom version is not a complete production platform.",
-    "notebook": "Run two configurations through the same harness and trace where their policies cause different outcomes."
+    "takeaway": "The harness owns the mechanism; the configuration owns what one agent may do.",
+    "notebook": "Read the grouped trace of every run in the shared EventStore. Then check the third agent's policy_decision events, allow for lookup_notes and approval for send_email, and the final line reporting 0 lines of harness code changed."
   },
   "08_project_website_maintenance_agent.ipynb": {
-    "idea": "The operational capstone runs the full agent lifecycle on a realistic maintenance task: obtain updates, decide what matters, propose a website change, pass guardrails, request approval, and record the result. Automation only triggers this workflow; it does not remove its controls.",
-    "example": "A scheduled run reads a public release feed, compares it with stored state, drafts a bounded update, and stops at an approval gate before any website-changing action.",
+    "idea": "A scheduler checks a feed; anything not already in processed_ids is new work. Drafting a change and publishing it are both registered harness tools, and publishing is external, so a person must approve it.",
+    "example": "propose_update stores a draft in durable state and the website file still does not exist. content/updates.md appears only after resume with approved=True.",
     "steps": [
-      "Fetch or replay a bounded external update",
-      "Use memory and tools to prepare an evidence-backed proposal",
-      "Apply safety, approval, logging, and checkpoint rules"
+      "Find items not yet in processed_ids.",
+      "Run guardrails, then draft a proposal.",
+      "Pause for approval, then write the file."
     ],
-    "takeaway": "An industry-style agent is an end-to-end governed system: model, tools, knowledge, memory, safety, observability, automation, and runtime working together.",
-    "notebook": "Run the cached path first, then one optional live observation. Confirm that no external change occurs without explicit approval."
+    "takeaway": "Policy asks whether this kind of action may happen; guardrails ask what only this application can know.",
+    "notebook": "Watch the tick stop at pending_approval with the website file still missing, and the poisoned feed refused by propose_update before anything is drafted. In the last cell, publish_update downgraded to write completes with nobody asked."
   }
 }

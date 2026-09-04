@@ -4,12 +4,12 @@ An interactive reader for the five-day Agentic AI Engineering curriculum. Studen
 
 ## What students get
 
-- **Getting started** page: how the course works, the three steps before Day 1, the API-key guide (the same text that opens the Day 1 notebook), Google Colab configuration, and a progress reset.
-- For every one of the 45 lessons, three views:
-  - **Learn**: the beginner guide (idea, mental picture, steps, key distinction, common mistake), the lesson's *Before you begin* block, the full **Concept briefing** theory text from the notebook, and the **Checkpoint and recap** with answers folded under *Show answer*.
-  - **Notebook**: the complete lesson notebook rendered cell by cell, markdown and code in reading order.
-  - **System view**: the lesson's architecture diagrams drawn from the Mermaid sources, with a text alternative.
-- Sidebar search across lesson titles, guides, and theory text; per-lesson completion tracking stored in the browser; notebook downloads; and one-click Colab links once the repository is configured.
+- **Getting started** page: how the course works in four lines, a course map of the five days (project and outcome per day), the three steps before Day 1, the API-key guide (the same text that opens the Day 1 notebook), Google Colab configuration, and a progress reset.
+- For every one of the 39 sections, three views:
+  - **Learn**: a short plain-language guide (the idea, a picture, three steps, the distinction to keep straight, the common mistake, what to notice when you run it), followed by the section's own explanations from the notebook with the checkpoint answers folded out.
+  - **Notebook**: the complete section rendered cell by cell, explanations and code in running order.
+  - **System view**: the section's architecture diagrams drawn from the Mermaid sources, with a text alternative.
+- Sidebar search across titles, guides and explanations; per-section completion tracking stored in the browser; notebook downloads; and one-click Colab links.
 
 ## Run locally
 
