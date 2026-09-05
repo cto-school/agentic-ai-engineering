@@ -4,13 +4,13 @@ An interactive reader for the five-day Agentic AI Engineering curriculum, its tw
 
 ## What students get
 
-- **Getting started** page: the course map (five days, the separate LangGraph and LangChain tracks, and the five standalone modules), how the course works in four lines, a course map of the five days (project and outcome per day), the three steps before Day 1, the API-key guide (the same text that opens the Day 1 notebook), Google Colab configuration, and a progress reset.
+- **Getting started** page: how the site works, a module map that places every unit on one of three layers (understand the model, build the agent, give it memory and a home) plus the five-day path, suggested routes through the modules, cards for the standalone modules and the five days, the three steps before a notebook module, the API-key guide (the same text that opens every notebook), Google Colab configuration, and a progress reset.
 - For every one of the 39 day sections, the 14 LangGraph-track sections and the 14 LangChain-track sections, three views:
   - **Learn**: why the section exists (the problem its recap names), the idea, an analogy, *How it works* (the mechanism in plain words, hand-written for the LangGraph track and taken from the diagram elsewhere), *What you will do in the notebook*, the key distinction, the common mistake, what to notice when running, and the section's recap (with folded checkpoint answers on the days). It no longer repeats the notebook's text; that lives in the Notebook tab.
   - **Notebook**: the complete section rendered cell by cell, explanations and code in running order.
   - **System view**: the section's architecture diagrams drawn from the Mermaid sources, with a text alternative.
 - For each of the 34 chapters of the five standalone modules (Ollama, n8n, OpenClaw, LLM Foundation, Mem0), two views: **Learn** (the same beginner guide, then the full chapter with its theory, instructions and commands; the LLM Foundation chapters on tokens and sampling embed two interactive simulations, a trainable byte-pair tokenizer and a next-token predictor with a temperature slider) and **System view**. Modules have no notebook, so no Colab link and no Notebook tab.
-- Sidebar search across titles, guides and explanations; per-section completion tracking stored in the browser; and one Colab link per day (next to the Learn tab and in the sidebar) that opens the complete day notebook. Sections are never opened or downloaded individually, because definitions carry forward within a day.
+- The sidebar lists one **Standalone modules** group (LangGraph first, then Ollama, n8n, OpenClaw, LLM Foundation and Mem0, LangChain last) above the **Five-day path**. Previous and next navigation stays inside a unit; the last section of a unit shows a card back to the module map. Sidebar search across titles, guides and explanations; per-section completion tracking stored in the browser; and one Colab link per notebook unit (next to the Learn tab and in the sidebar) that opens the complete notebook. Sections are never opened or downloaded individually, because definitions carry forward within a notebook.
 
 ## Run locally
 
