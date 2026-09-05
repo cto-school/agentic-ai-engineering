@@ -26,7 +26,8 @@ DAYS = [
     "day_04_multi_agent_systems",
     "day_05_ai_harness",
 ]
-TRACKS = {"langchain_track": "langchain_complete.ipynb"}     # directory -> track notebook
+TRACKS = {"langchain_track": "langchain_complete.ipynb", "langgraph_track": "langgraph_complete.ipynb"}   # directory -> track notebook
+TRACK_NAMES = {"L": "LangChain", "G": "LangGraph"}            # section letter -> track name used in lesson headings
 SKIP_TAGS = {"master-notebook-introduction", "master-section-checkpoint", "master-notebook-completion"}
 
 
@@ -56,10 +57,10 @@ def promote_heading(cell: dict) -> dict:
         day, number, title = match.groups()
         heading = title if re.match(r"^Day \d+ (Project|Capstone) — ", title) else f"Day {day}.{number} — {title}"
         body = body[: match.start()] + f"# {heading}" + body[match.end():]
-    track_match = re.match(r"^##\s+L(\d+)\s+—\s+(.+?)\s*$", body, flags=re.MULTILINE)
+    track_match = re.match(r"^##\s+([A-Z])(\d+)\s+—\s+(.+?)\s*$", body, flags=re.MULTILINE)
     if track_match:
-        number, title = track_match.groups()
-        body = body[: track_match.start()] + f"# LangChain L{number} — {title}" + body[track_match.end():]
+        letter, number, title = track_match.groups()
+        body = body[: track_match.start()] + f"# {TRACK_NAMES.get(letter, letter)} {letter}{number} — {title}" + body[track_match.end():]
     cloned["source"] = body.splitlines(keepends=True)
     cloned.setdefault("metadata", {})["tags"] = sorted(tags(cloned) - {"master-section-start"})
     return cloned
