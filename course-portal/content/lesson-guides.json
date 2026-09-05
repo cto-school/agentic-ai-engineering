@@ -581,5 +581,547 @@
     ],
     "takeaway": "Before building, ask whether the problem should be an agent at all; if the steps are known, a workflow is cheaper, faster and safer.",
     "notebook": "The final run pauses for approval, then prints the trajectory, the trace and the ledger entry."
+  },
+  "01_graphs_before_agents.ipynb": {
+    "idea": "LangGraph runs Python functions over a shared dictionary in a declared order. A node reads the state and returns the keys it changed; edges fix the order; a conditional edge lets a function choose the next node; an edge pointing backwards makes a loop. No model is involved yet.",
+    "example": "A flowchart on a whiteboard: boxes are nodes, arrows are edges, a diamond is a conditional edge, and the sticky note you carry from box to box is the state.",
+    "steps": [
+      "Declare a Counter state and three nodes; wire START, three edges and END; invoke and draw.",
+      "Add a routing function for a conditional edge, then point an edge back at a node to loop.",
+      "Build keyword triage for handbook questions as a real workflow with no AI in it."
+    ],
+    "takeaway": "In a workflow your code chooses the edges; in an agent a model chooses some of them. The graph shape is the same.",
+    "notebook": "Watch the printed trace grow through the pipeline, and see the keyword workflow miss a question phrased in new words."
+  },
+  "02_model_as_a_node.ipynb": {
+    "idea": "A model is text in, text out, with no memory; it sees only the context you send. In a graph a model call is just a node that reads the conversation from state and returns the reply. The messages key uses the add_messages reducer so replies append rather than replace.",
+    "example": "A shared notebook on the helpdesk counter: every person who handles the ticket adds a line rather than tearing the page out.",
+    "steps": [
+      "Compare a plain list key with an add_messages key: the second keeps both messages.",
+      "Build the one-node chatbot graph with a system prompt and read the usage metadata.",
+      "Invoke twice and watch the second run forget the first; pass the history by hand to see why."
+    ],
+    "takeaway": "The message list is the model's entire memory and its entire world; reducers decide how the graph accumulates it.",
+    "notebook": "The reducer demo prints ['B'] versus ['start', 'A', 'B']; run 3 knows the name only because you passed earlier messages in."
+  },
+  "03_tools_and_the_agent_loop.ipynb": {
+    "idea": "Tools are functions the model may request but never execute. The agent loop is one conditional edge pointing backwards: the agent node asks the model, the tools node runs any requests, and control returns until the model answers. Good tools have precise descriptions, validated arguments and errors returned as data.",
+    "example": "A librarian (the model) fills in request slips; a runner (the tools node) fetches the books and brings them back; the librarian keeps writing slips until the question is answered.",
+    "steps": [
+      "Define three read tools with @tool and print the schema the model sees.",
+      "Write call_model, run_tools and should_continue, wire agent -> tools -> agent, then rebuild with ToolNode, tools_condition and build_agent().",
+      "Compare a vaguely described tool with a precise one, add a Pydantic args_schema, and return errors as values."
+    ],
+    "takeaway": "The model emits a request; your node executes it. That boundary is where every later safety feature lives, and the docstring is the interface.",
+    "notebook": "The trajectory shows requests, results and the answer; the vague tool goes unused; the bad id never reaches the data."
+  },
+  "04_structured_output_and_routing.ipynb": {
+    "idea": "with_structured_output makes the model fill in a Pydantic schema instead of writing prose, so the result is validated before your code sees it. A triage node stores the ticket fields in state and a conditional edge routes on the category. The records desk is the whole agent graph reused as one node, a subgraph.",
+    "example": "A receptionist fills in a short form for each visitor and points them to the right counter; one of those counters is a full expert team behind a single door.",
+    "steps": [
+      "Define Ticket with Literal fields and classify three messages into validated objects.",
+      "Write triage, faq and smalltalk nodes and add the compiled agent as the records node.",
+      "Wire the conditional edge inside build_desks() and run three different questions."
+    ],
+    "takeaway": "Use the agent loop only where judgement helps; route everything else through fixed nodes, on decisions your code can validate.",
+    "notebook": "Three tickets come back as objects with a category and priority; three questions take three paths."
+  },
+  "05_short_term_memory_and_context.ipynb": {
+    "idea": "A checkpointer saves the whole state after every node under a thread id, so the same thread continues the conversation, a crashed run can resume where it died, and a paused run can wait for a human. Because threads grow, a context-management node summarises old turns and deletes them with RemoveMessage.",
+    "example": "A case file per ticket number, with a one-paragraph summary stapled to the front so nobody has to reread fifty pages.",
+    "steps": [
+      "Compile build_desks() with InMemorySaver and invoke the same thread twice and a different thread once.",
+      "Read get_state and walk get_state_history oldest first.",
+      "Add manage_context with RemoveMessage plus a summary in state, and watch a long thread stay short."
+    ],
+    "takeaway": "Persistence is more than chat memory, and memory without context management just makes every call slower and costlier.",
+    "notebook": "Turn 2 answers from turn 1; the other thread knows nothing; the long thread holds a handful of messages plus a summary."
+  },
+  "06_long_term_memory.ipynb": {
+    "idea": "A store holds facts about a person across conversations, keyed by namespace. The application passes the user's identity as runtime context that the model cannot forge; a profile-loading node reads the store into state, the agent puts the facts in its prompt, and a remember tool writes new facts back.",
+    "example": "A regular customer's preferences are on file at the shop, not in today's conversation; any assistant who serves them can read the file, and only that customer's file.",
+    "steps": [
+      "Declare a Context dataclass and compile the graph with context_schema and a store.",
+      "Write load_profile with Runtime[Context] and remember_about_me with get_runtime().",
+      "Remember in one thread, recall in another, and confirm another user sees nothing."
+    ],
+    "takeaway": "State, short-term memory, long-term memory and knowledge are four different things; keep them separate.",
+    "notebook": "The store contents printed at the end are keyed by ('profiles', user_id), not by thread."
+  },
+  "07_knowledge_and_retrieval.ipynb": {
+    "idea": "Keyword search cannot find text that means the same thing in other words. An embedding model turns chunks into vectors; cosine similarity finds the nearest ones to a question; the model answers only from those excerpts. The same retrieve function serves a fixed faq node and a search tool the agent can call.",
+    "example": "A librarian does not read you the whole library; they bring the three pages most likely to answer your question, and tell you if none of them does.",
+    "steps": [
+      "Build the corpus, embed it into an index of unit vectors, and retrieve by cosine similarity.",
+      "Write faq_rag as a retrieve-then-answer node with a grounding instruction.",
+      "Wrap retrieve as search_knowledge and let the records agent decide when to call it."
+    ],
+    "takeaway": "2-step RAG is predictable and cheap; agentic RAG is for questions that need several lookups or reasoning in between; grounding is an instruction plus cited sources.",
+    "notebook": "The library note is found for a question that shares no words with it; the agent combines a record with a policy excerpt."
+  },
+  "08_approval_permissions_and_injection.ipynb": {
+    "idea": "Write tools need three architectural defences: the caller's role decides which tools the model sees, a guard node re-checks the role before any write, and an approval node pauses with interrupt() until a human resumes with Command. A document containing an instruction shows why the defences must sit at the tool boundary, not in the prompt.",
+    "example": "A clerk fills in a registration form; only staff have the form at all, a supervisor checks the badge, and a manager signs before anything changes; a note slipped into the file cannot skip any of that.",
+    "steps": [
+      "Add register_course and send_email, a role table, and an agent node that binds only allowed tools.",
+      "Write guard and approval nodes and wire agent -> guard -> approval -> tools inside build_safe_agent().",
+      "Approve, reject, use interrupt_before, then poison the knowledge index and run the attack as student and as staff."
+    ],
+    "takeaway": "Prompting is not authorisation. Anything the model reads can try to steer it; only the graph can stop it.",
+    "notebook": "Staff writes pause for approval, student writes are blocked, and the injected instruction adds nothing to REGISTRATIONS."
+  },
+  "09_reliability_and_limits.ipynb": {
+    "idea": "Real tools fail and real models loop. A RetryPolicy on the tools node retries transient errors (name them with retry_on), ToolNode with handle_tool_errors=True turns remaining errors into messages the model can read, and recursion_limit on a run stops any graph that never reaches a stop condition.",
+    "example": "A delivery service retries a call when the line is busy, records a failed delivery instead of crashing the van, and gives up after a fixed number of attempts.",
+    "steps": [
+      "Add a flaky timetable tool and a RetryPolicy with retry_on=TimeoutError on the tools node.",
+      "Show the same failure becoming an error ToolMessage.",
+      "Build a graph that loops forever and stop it with recursion_limit; pass the same limit to an agent run."
+    ],
+    "takeaway": "Retry reads freely; never blindly retry a write. Bound every loop.",
+    "notebook": "The flaky tool succeeds on attempt 2; the endless graph stops at step 6 with GraphRecursionError."
+  },
+  "10_parallel_work.ipynb": {
+    "idea": "Independent checks should not wait for each other. Several edges from one node run branches at the same time, a reducer (operator.add) merges their writes to the shared key, and a fan-in node waits for all of them. Send creates such branches at run time, one per item.",
+    "example": "Three colleagues check attendance, credits and prerequisites at the same desk simultaneously, then drop their notes into one tray for the decision.",
+    "steps": [
+      "Declare findings with an operator.add reducer and three check nodes fanning out from START into a verdict node.",
+      "Invoke for three student and course pairs and compare the verdicts.",
+      "Use Send to spawn one worker per course code in the question."
+    ],
+    "takeaway": "Any key written by parallel nodes needs a reducer; without one LangGraph refuses to guess.",
+    "notebook": "Three findings merge into one verdict; three courses are checked by three concurrent workers."
+  },
+  "11_mcp_tools_from_servers.ipynb": {
+    "idea": "MCP is the open standard for exposing tools from a server so any agent can use them. A FastMCP server written in a few lines runs as a separate process; MultiServerMCPClient lists its tools as ordinary tool objects that go into the same ToolNode as local functions. MCP tools are async, so the graph runs with ainvoke.",
+    "example": "Instead of rewriting the library's lookup code inside the helpdesk, the helpdesk phones the library desk, which owns its own systems and answers in a standard format.",
+    "steps": [
+      "Write campus_library_server.py with two FastMCP tools.",
+      "Start it through MultiServerMCPClient and print the tools it exposes.",
+      "Bind local and MCP tools together and run the agent with ainvoke.",
+      "Connect to a public MCP server (DeepWiki) with a timeout and ask it about the LangGraph repository."
+    ],
+    "takeaway": "A server is code you run on the model's behalf: read what it exposes, and keep the guard and approval layers in front of its write tools.",
+    "notebook": "The model calls two tools that exist only in the server file; their results come back through the same tools node."
+  },
+  "12_multi_agent_supervisor.ipynb": {
+    "idea": "A supervisor node makes a structured choice of the next specialist and routes with Command(goto=...); each specialist is a compiled agent subgraph behind a named worker node that reports back. Multi-agent is a boundary decision (tools, prompts, permissions, owners) and costs more model calls. A handoff is the other pattern: the active agent transfers the conversation itself, with no supervisor.",
+    "example": "A front-desk manager reads the question, sends the records clerk and then the policy clerk to work, and finally writes one reply from their notes.",
+    "steps": [
+      "Build a records specialist and a handbook specialist with build_agent and different tools and personas.",
+      "Write the supervisor node with SupervisorDecision and Command(goto=...), and wire workers back to it.",
+      "Count model calls against the single agent that owns all the tools.",
+      "Build the handoff variant: a transfer tool turned into Command(goto=...) so the active agent changes."
+    ],
+    "takeaway": "Split into agents only at a real boundary; measure the cost before you do.",
+    "notebook": "The supervisor prints its three decisions; the single agent answers the same question with fewer model calls."
+  },
+  "13_streaming_tracing_and_evaluation.ipynb": {
+    "idea": "stream() shows progress node by node or token by token; the same updates stream recorded with timings and token counts is a trace; an evaluation set states the expected desk and tools for each question and a harness turns runs into a pass rate with latency and cost.",
+    "example": "A parcel tracking page shows each stage as it happens, the courier keeps a full log for complaints, and the company tests a route change on last month's deliveries before rolling it out.",
+    "steps": [
+      "Stream a run with stream_mode='updates' and another with stream_mode='messages'.",
+      "Record the updates stream as a trace with durations and tokens.",
+      "Define five evaluation cases with expected trajectories and print the pass rate.",
+      "Optionally trace one run in LangSmith with two environment variables and open its URL."
+    ],
+    "takeaway": "'It worked when I tried it' is not an evaluation; judge trajectories, not just answers, and keep the cases in version control.",
+    "notebook": "Nodes appear as they finish; the trace lists each step; five cases produce a pass rate with average latency and model calls."
+  },
+  "15_the_full_system.ipynb": {
+    "idea": "Every earlier layer in one graph: profile loading, context management, structured triage, a grounded faq desk, an approval-gated records agent with retries and local plus MCP tools, a parallel eligibility desk, small talk, a checkpointer for threads and a store for people. This is the shape production agent systems converge on.",
+    "example": "A well-run service desk: the receptionist recognises you and remembers your file, sends you to the right counter, the counter checks your badge before doing anything, and everything is logged.",
+    "steps": [
+      "Assemble CampusState and the records desk from the G8, G9 and G11 pieces.",
+      "Wire load_profile -> manage_context -> triage -> four desks and compile with a checkpointer and the store.",
+      "Run a five-turn staff conversation with ainvoke, approve the pause, and print the audit trail and the stored profile."
+    ],
+    "takeaway": "Ask first whether the problem needs an agent at all; if the steps are known, a workflow is cheaper, faster and safer. Use the loop where judgement helps, and gate its writes.",
+    "notebook": "Five turns cross every desk, one pauses for approval, and the state history lists every node that ran."
+  },
+  "14_scheduled_runs.ipynb": {
+    "idea": "Assistants also run on a schedule with nobody typing or watching. A tick is a synthetic input on its own thread; unattended runs may read freely but queue their writes behind an interrupt that waits in the checkpoint for a later review; and a ledger of processed tick ids makes a duplicate trigger a no-op.",
+    "example": "A night-shift clerk prepares warning letters from the attendance register, leaves them in the manager's tray for signature, and checks the log so the same night's batch is never prepared twice.",
+    "steps": [
+      "Build the watcher graph: find_at_risk -> draft_emails -> approval (interrupt) -> send, compiled with a checkpointer.",
+      "Play the scheduler with a loop of tick ids, one duplicated, and keep an idempotency ledger.",
+      "Find the threads waiting for approval, approve one with Command(resume=True), and confirm the other stays queued."
+    ],
+    "takeaway": "Scheduled agents need three things a chat agent does not: a synthetic trigger, queued approvals, and idempotent ticks.",
+    "notebook": "Two ticks run, the duplicate is skipped, no email leaves until a person approves, and one thread is still waiting at the end."
+  },
+  "01_what_ollama_is.md": {
+    "idea": "Ollama runs open-weights models on your own computer and serves them at localhost:11434. A model on disk is weights, a tokenizer and a chat template in one file, shrunk by 4-bit quantisation so it fits a laptop.",
+    "example": "A vending machine in your kitchen instead of a restaurant in town: smaller menu, no bill, works when the roads are closed.",
+    "steps": [
+      "Learn what the GGUF file contains and why quantisation makes it small.",
+      "See how the server, the runner and the clients fit together.",
+      "Find your RAM and CPU so the next chapter can choose a model."
+    ],
+    "takeaway": "No GPU means slower generation, not worse answers.",
+    "notebook": "Write down the RAM figure the command prints; O3 turns it into a model tag."
+  },
+  "02_install_ollama.md": {
+    "idea": "One installer per operating system gives you a background server on port 11434 and an ollama command. The chapter ends when a plain HTTP request answers 'Ollama is running'.",
+    "example": "Installing a printer driver: the printer sits idle until something sends it a job.",
+    "steps": [
+      "Run the installer for Windows or macOS, or the one-line script on Linux.",
+      "Open a new terminal and run ollama --version.",
+      "Request http://localhost:11434 and read the reply."
+    ],
+    "takeaway": "The server is what runs models; the ollama command is only one of its clients.",
+    "notebook": "If the request says connection refused, start the tray app or ollama serve before going further."
+  },
+  "03_choose_a_model_for_a_laptop.md": {
+    "idea": "Model size drives download, RAM, speed and quality together. For 4-bit files, budget about 0.6 GB of RAM per billion parameters plus working space, and match Gemma 3's tags to your machine.",
+    "example": "Choosing a suitcase for a flight: the biggest one holds more but will not fit in the overhead locker.",
+    "steps": [
+      "Read the tag naming and the memory rule of thumb.",
+      "Find your RAM in the table and pick gemma3:1b or gemma3:4b.",
+      "Note the speed you should expect on a CPU."
+    ],
+    "takeaway": "8 GB means gemma3:1b, 16 GB means gemma3:4b; bigger is better and slower in equal measure.",
+    "notebook": "Expect the first reply after a pause to be slow: that is the model loading, not a fault."
+  },
+  "04_pull_and_run_gemma.md": {
+    "idea": "ollama pull downloads a model and ollama run opens a chat with it. Slash commands change the system prompt and sampling parameters inside the chat; list, ps, stop, show and rm manage what is on disk and in memory.",
+    "example": "A library card: borrow the book once, read it as often as you like, hand it back when shelf space runs out.",
+    "steps": [
+      "Pull gemma3:4b and confirm with ollama list.",
+      "Hold a conversation, then use /set system and /set parameter temperature.",
+      "Inspect ollama ps and unload with ollama stop."
+    ],
+    "takeaway": "Temperature 0 makes the same question give the same answer; that is greedy decoding.",
+    "notebook": "Ask the same question three times at temperature 0 and compare the answers word for word."
+  },
+  "05_talk_to_ollama_from_programs.md": {
+    "idea": "The server speaks Ollama's native /api/chat and an OpenAI-compatible /v1/chat/completions. Any client the course uses reaches Gemma 3 by changing two strings: the base URL and the model name.",
+    "example": "A power adapter: the appliance is unchanged, only the plug is swapped.",
+    "steps": [
+      "Send a native /api/chat request with curl and read the reply and token counts.",
+      "Send an OpenAI-style request to /v1/chat/completions.",
+      "Point the course's chat helper at localhost:11434/v1."
+    ],
+    "takeaway": "Colab runs in the cloud and cannot see your laptop; the Ollama route is for running course code locally.",
+    "notebook": "Compare prompt_eval_count and eval_count in the native reply with the usage field of the OpenAI-style reply."
+  },
+  "06_customise_and_troubleshoot.md": {
+    "idea": "A Modelfile fixes a base model, a system prompt and parameters under a new name, so you never retype settings. Environment variables set server behaviour, and most failures are memory or a missing server.",
+    "example": "A saved preset on a camera: same sensor, your exposure and colour choices applied every time.",
+    "steps": [
+      "Write a Modelfile and build it with ollama create tutor.",
+      "Read the parameter and environment-variable tables.",
+      "Match any error you meet to the troubleshooting list."
+    ],
+    "takeaway": "The server has no authentication; leave OLLAMA_HOST alone unless another device must reach it.",
+    "notebook": "Run ollama show tutor --modelfile and find your system prompt and the inherited chat template."
+  },
+  "01_what_n8n_is.md": {
+    "idea": "n8n runs drawings: a trigger starts a workflow, nodes each do one thing, items flow between them, and every run is recorded as an execution. The AI Agent node holds the tool loop from Day 1 with its model, memory and tools plugged in underneath.",
+    "example": "A model railway: the timetable is the trigger, each station does one job, and the carriages are the items.",
+    "steps": [
+      "Learn the five words: workflow, trigger, node, item, execution.",
+      "See why the module uses n8n Cloud and a Gemini key.",
+      "Read the table of the four agents you will build."
+    ],
+    "takeaway": "A chain is a fixed model step; an agent lets the model choose tools and when to stop.",
+    "notebook": "Look at diagram D48 and name which box is the trigger and which line carries items."
+  },
+  "02_open_an_n8n_cloud_account.md": {
+    "idea": "The n8n Cloud trial gives fourteen days of the Pro plan with no card. A Gemini key from AI Studio is stored once as a credential, and six parts of the editor are all the later chapters need.",
+    "example": "Moving into a workshop: find the power sockets, the bench, the toolbox and the light switch before starting a project.",
+    "steps": [
+      "Sign up at n8n.io and open your workspace.",
+      "Create a Gemini key and save it as a Google Gemini(PaLM) Api credential.",
+      "Locate the canvas, plus button, node settings, execute buttons, Executions tab and Active switch."
+    ],
+    "takeaway": "Save stores the drawing; Active turns the trigger on for real.",
+    "notebook": "Drag a field from a node's input column into a parameter and read the expression n8n writes for you."
+  },
+  "03_how_an_agent_node_works.md": {
+    "idea": "The AI Agent node runs the Day 1 loop: build the messages, call the model with tool schemas, run requested tools, repeat until text. Its system message, tool descriptions and Max Iterations are the three levers on its behaviour.",
+    "example": "A receptionist with a phone list: the list's descriptions decide who gets called, and the manager's brief decides how they speak.",
+    "steps": [
+      "Read the four sockets: chat model, memory, tools, output parser.",
+      "See how tool descriptions and model-filled parameters work.",
+      "Learn to tell a Basic LLM Chain from an agent on someone else's canvas."
+    ],
+    "takeaway": "The model sees only a tool's name, description and parameters; the description does the routing.",
+    "notebook": "Nothing to run yet: keep diagram D49 open while building the next four agents."
+  },
+  "04_agent_1_chat_assistant_with_memory.md": {
+    "idea": "Chat Trigger, AI Agent, a Gemini chat model and Simple Memory make the smallest agent. Memory is keyed by session; shrink its window and the assistant forgets, exactly as the message list did in Day 1.",
+    "example": "A receptionist with a notepad: give them a shorter notepad and they stop remembering your name.",
+    "steps": [
+      "Add the trigger, the agent, the Gemini model and Simple Memory.",
+      "Paste the system message and test three messages in the Chat panel.",
+      "Open the execution and read the real message list sent to Gemini."
+    ],
+    "takeaway": "The model has no memory; the memory sub-node supplies it.",
+    "notebook": "Set Context Window Length to 1, start a fresh chat, and watch the third answer no longer know your name."
+  },
+  "05_agent_2_research_agent_with_tools.md": {
+    "idea": "Wikipedia, Calculator and an HTTP Request Tool plug into the tool socket; placeholders in the URL are filled by the model. The Executions view shows every round of the loop: model call, tool, model call, answer.",
+    "example": "An intern with a phone, a calculator and an encyclopedia: useful in proportion to how well each is labelled.",
+    "steps": [
+      "Attach the three tools and write the weather tool's description and placeholders.",
+      "Set the system message and Max Iterations, then ask the three test questions.",
+      "Count the rounds in the execution and read each tool's output."
+    ],
+    "takeaway": "Tool descriptions are what the model reads to choose; write them for a colleague.",
+    "notebook": "Change the weather tool's description to say it returns stock prices and watch the model stop using it for weather."
+  },
+  "06_agent_3_ticket_triage_with_structured_output.md": {
+    "idea": "A form submission goes to an agent whose Structured Output Parser guarantees a JSON object with enum fields; IF, Gmail and Google Sheets then route deterministically. The model decided the fields, the workflow decided the path.",
+    "example": "A triage nurse fills in a fixed form with tick boxes; the ward is chosen by the ticks, not by the nurse's prose.",
+    "steps": [
+      "Build the form trigger and the agent with the JSON schema parser.",
+      "Submit a test message and inspect the validated object.",
+      "Add the IF node with two branches and submit an urgent and a routine ticket."
+    ],
+    "takeaway": "An enum in the schema means the IF node can never meet a fourth value.",
+    "notebook": "Submit nonsense through the form and confirm the parser still returns all four fields."
+  },
+  "07_agent_4_supervisor_and_running_agents_well.md": {
+    "idea": "A workflow that starts with When Executed by Another Workflow becomes a tool; a supervisor calls two specialists through Call n8n Workflow Tool, and each runs as its own execution. Limits, error workflows, guarded write actions and JSON export keep agents safe to run.",
+    "example": "A project manager who phones a researcher and then a copywriter, and is billed for three people's time.",
+    "steps": [
+      "Build the Researcher and Writer specialist workflows.",
+      "Build the supervisor with two Call n8n Workflow Tool sub-nodes and test it.",
+      "Set Max Iterations and a timeout, add an error workflow, and download all four workflows as JSON."
+    ],
+    "takeaway": "Prefer one agent with tools until you can name what the split buys.",
+    "notebook": "Open the Executions list of each specialist after one supervisor question and count the model calls in total."
+  },
+  "01_what_openclaw_is.md": {
+    "idea": "OpenClaw is a self-hosted assistant: a gateway process, channels such as Telegram, agents with tools and memory, and a model provider such as Gemini. It can run commands, so it belongs on an always-on machine of its own.",
+    "example": "A live-in assistant: wonderful when you are out, and not someone you give the keys to your whole house.",
+    "steps": [
+      "Learn the parts: gateway, channels, agents, providers, skills, the config file.",
+      "Follow one message from Telegram to Gemini and back.",
+      "Read why a dedicated machine is the biggest safety measure."
+    ],
+    "takeaway": "Most incidents are someone messaging the bot and the bot doing what they asked.",
+    "notebook": "Gather a card, a phone, a Google account and a Telegram account before starting C2."
+  },
+  "02_open_an_aws_account_safely.md": {
+    "idea": "The root user of an AWS account is unrestricted and unrestrictable. Give it MFA and no access keys, create an IAM administrator with MFA for daily work, set a zero-spend budget alert and choose one region.",
+    "example": "The master key of a building lives in a safe; staff carry ordinary keys that can be cancelled.",
+    "steps": [
+      "Sign up and choose the Free plan with its credits.",
+      "Add MFA to the root user, then create and MFA-protect an admin IAM user.",
+      "Create a zero-spend budget and pick a region."
+    ],
+    "takeaway": "A compromised IAM user can be deleted; a compromised root user cannot.",
+    "notebook": "Sign out of root, sign in at the bookmarked URL as admin, and confirm the account menu shows the IAM user."
+  },
+  "03_launch_an_ec2_ubuntu_machine.md": {
+    "idea": "EC2 rents virtual machines. Ubuntu 24.04 LTS on a t3.small with a new .pem key pair and a security group that allows SSH from your IP only is the machine OpenClaw will live on.",
+    "example": "Renting a lock-up garage: choose the size, get one key cut, and leave only the door you need unlocked.",
+    "steps": [
+      "Choose the image, the instance type and 20 GiB of storage.",
+      "Create the key pair and store the .pem file where you will find it.",
+      "Create the security group with one SSH rule from My IP, launch, and copy the public IP."
+    ],
+    "takeaway": "The public IP changes on stop and start; your own IP changes too, so update the rule.",
+    "notebook": "Wait for 2/2 status checks before copying the address; stop the instance when you will not use it for days."
+  },
+  "04_ssh_in_and_harden_the_machine.md": {
+    "idea": "Log in as the ubuntu user with the key, use sudo for administration and never log in as root. Make PermitRootLogin no and PasswordAuthentication no explicit, add ufw and unattended-upgrades, and prove a password login is refused.",
+    "example": "Changing the locks the day you move in, then checking the old key no longer turns.",
+    "steps": [
+      "Log in with ssh -i and set up an ssh config entry.",
+      "Write the sshd hardening file, test from a second terminal, and check root is locked.",
+      "Enable ufw with OpenSSH only and install unattended-upgrades."
+    ],
+    "takeaway": "Keep the first terminal open until a second login succeeds after restarting ssh.",
+    "notebook": "ssh -o PubkeyAuthentication=no must answer Permission denied without asking for a password."
+  },
+  "05_install_openclaw.md": {
+    "idea": "One curl command installs Node and OpenClaw. openclaw onboard --install-daemon configures it and creates a user service; loginctl enable-linger keeps that service running after you log out. The gateway listens on the machine itself only.",
+    "example": "Installing a heating controller: it must keep running when nobody is home, and its panel is inside the house.",
+    "steps": [
+      "Run the install script and check openclaw --version.",
+      "Run the onboarding wizard with the Gemini key and enable linger.",
+      "Check gateway status, doctor, and that port 18789 is bound to 127.0.0.1."
+    ],
+    "takeaway": "A systemd user service stops with your session unless linger is enabled.",
+    "notebook": "Log out, log in again, and run openclaw gateway status: it must still say running."
+  },
+  "06_connect_a_telegram_bot.md": {
+    "idea": "BotFather issues a token; it goes into channels.telegram.botToken. With dmPolicy pairing, strangers receive a code and nothing else until you approve it on the server, so only you can talk to the bot.",
+    "example": "A doorbell with a code pad: visitors get a number, and only the numbers you approve open the door.",
+    "steps": [
+      "Create the bot with /newbot and copy the token.",
+      "Set the token and dmPolicy with openclaw config set, then check channels status.",
+      "Message the bot, approve the pairing code, and message it again."
+    ],
+    "takeaway": "The token is the bot's password; revoke it in BotFather if it leaks.",
+    "notebook": "Watch openclaw logs --follow for the getMe call, then for your first approved message."
+  },
+  "07_gemini_model_and_daily_operation.md": {
+    "idea": "A Gemini key from AI Studio goes in through onboarding, and the model is one config key such as google/gemini-2.5-flash. Restrict tools, run openclaw security audit after every change, and operate with logs, updates, backups and instance stop or terminate.",
+    "example": "A car after purchase: choose the fuel, lock the glovebox, and keep up the services.",
+    "steps": [
+      "Set the key and the primary model, then test from the terminal and from Telegram.",
+      "Apply the conservative tools baseline and run the security audit.",
+      "Learn the routine: logs, restart, update, backup, cost."
+    ],
+    "takeaway": "Loosen tool permissions one at a time and audit after each change.",
+    "notebook": "Ask the bot which model it is and what 17 times 23 is, in the terminal and in Telegram, and compare."
+  },
+  "01_from_text_to_tokens.md": {
+    "idea": "The model receives token ids, not text. A byte-pair tokenizer builds its vocabulary by merging frequent pairs, one token is about three quarters of an English word, and each id becomes a learned vector plus position information.",
+    "example": "A stenographer's shorthand: common words get one stroke, rare words are spelled out.",
+    "steps": [
+      "Read why sub-word pieces beat words and characters.",
+      "Train the in-browser BPE tokenizer and tokenize your own sentence.",
+      "See how ids become vectors and why chats are one token sequence."
+    ],
+    "takeaway": "Tokens are what cost money, fill context windows and confuse arithmetic.",
+    "notebook": "In the simulation, slide merges from 0 upward and watch a familiar word fuse into one token while an unknown word stays in pieces."
+  },
+  "02_inside_the_transformer.md": {
+    "idea": "A Transformer is a stack of identical blocks that add refinements to each token's vector: attention moves information between positions, the feed-forward network transforms each token. The last token's final vector becomes one logit per vocabulary entry.",
+    "example": "A newsroom: reporters read each other's notes (attention), then each writes their own paragraph (the MLP), floor after floor.",
+    "steps": [
+      "Follow the residual stream through one block in diagram D56.",
+      "Understand queries, keys, values, heads and causal masking.",
+      "See where the parameters and the stored knowledge live."
+    ],
+    "takeaway": "Attention cost grows with the square of the context length; that is why context management exists.",
+    "notebook": "Read the sizes table and work out why a 32K context is expensive even for a small model."
+  },
+  "03_predicting_the_next_token.md": {
+    "idea": "Softmax turns logits into probabilities; greedy takes the top one, sampling draws by probability. Temperature reshapes the distribution first, top-p cuts its tail, and a reply is one token per pass, appended and fed back, until an end token.",
+    "example": "Rolling a loaded die for every word: temperature changes how loaded the die is.",
+    "steps": [
+      "Read how softmax, temperature, top-p and top-k act on the logits.",
+      "Play with the in-browser next-token predictor and its temperature slider.",
+      "See why fluent and wrong are produced by the same mechanism."
+    ],
+    "takeaway": "Nothing in the sampling step checks a fact; hallucination is the mechanism working on the wrong input.",
+    "notebook": "Generate twice at temperature 0 and twice at 1, then push it to 2 and watch the text lose the thread."
+  },
+  "04_pretraining.md": {
+    "idea": "Pretraining feeds trillions of cleaned, deduplicated tokens through the model and adjusts every parameter to predict the next token better. The loss is cross-entropy, the compute is thousands of GPUs for weeks, the loss falls predictably with scale, and the result is a base model.",
+    "example": "Learning a language by reading the whole library with the last word of every sentence covered.",
+    "steps": [
+      "See where the data comes from and why deduplication and the cutoff matter.",
+      "Understand the objective and how backpropagation adjusts the weights.",
+      "Read what scaling laws predict and what a base model is like."
+    ],
+    "takeaway": "No facts are entered by hand; everything emerges from predicting the next token well.",
+    "notebook": "Find the training-token count and parameter count of a model you use and compare their ratio with the rule of thumb."
+  },
+  "05_post_training.md": {
+    "idea": "SFT teaches the chat template and the habit of answering; RLHF or DPO shapes preferences from comparisons; reinforcement learning with verifiable rewards trains reasoning and reliable tool use. None of it adds knowledge or turns prompts into rules.",
+    "example": "Finishing school for a widely read but tactless graduate: manners and habits, not new facts.",
+    "steps": [
+      "Read how the chat template and the end-of-turn token are learned.",
+      "See how preference training works and where sycophancy comes from.",
+      "Understand reasoning training and what fine-tuning can and cannot do."
+    ],
+    "takeaway": "A system prompt is trained influence, not enforcement; guardrails that must hold belong in code.",
+    "notebook": "Print a model's chat template with ollama show and find the role markers described here."
+  },
+  "06_inference_under_the_hood.md": {
+    "idea": "Prefill processes the prompt in parallel and is cheap; decode produces one token per sequential pass and is expensive. The KV cache stores attention state per token, and tool calls and structured output are text formats the model emits and the host parses or constrains.",
+    "example": "A courtroom stenographer: reading the case file is quick, transcribing the trial happens one word at a time.",
+    "steps": [
+      "Separate prefill from decode and see why input tokens cost less.",
+      "Understand the KV cache, batching and quantisation at serving time.",
+      "Read what a tool call and a strict JSON mode actually are."
+    ],
+    "takeaway": "The model never runs anything; Day 1's manual loop is tool calling, not a simplification of it.",
+    "notebook": "Compare a provider's input and output prices and explain the ratio with prefill and decode."
+  },
+  "07_limits_and_what_it_means_for_agents.md": {
+    "idea": "Each limit of a model traces back to a mechanism: hallucination to next-token prediction, the cutoff to the data, context effects to attention, injection to the single token sequence, sycophancy to preference training. The fixes are around the model, not in a cleverer prompt.",
+    "example": "Knowing why a bridge sways tells you whether to add a cable or just paint it.",
+    "steps": [
+      "Map each limit to its mechanism and to the course section that addresses it.",
+      "Read how models are measured and the three rules for your own evaluation.",
+      "Choose between prompting, retrieval, fine-tuning and code for a given change."
+    ],
+    "takeaway": "Reliability comes from what you build around the model: retrieval, validation, permissions, evaluation.",
+    "notebook": "Take one failure you have seen from a model and find its row in the limits table."
+  },
+  "01_why_agents_need_a_memory_layer.md": {
+    "idea": "Memory lives outside the model. A memory layer such as Mem0 turns conversations into durable facts per user and hands back the relevant ones on demand, through add, search, get, update, delete and history. It removes extraction and retrieval plumbing, not your duties around consent and isolation.",
+    "example": "A good receptionist keeps a card index of regulars' preferences; the index is not the receptionist, and someone still decides what goes on a card.",
+    "steps": [
+      "Separate conversation memory, long-term memory and knowledge, and place Mem0 in the middle row.",
+      "Read the four operations and where they sit around the agent loop in diagram D65.",
+      "Compare Platform, open-source library and self-hosted server, and pick one for the module."
+    ],
+    "takeaway": "The operations are identical in all three deployments; only where the data lives changes.",
+    "notebook": "Decide now which user id scheme your own application would use; the whole module depends on scoping."
+  },
+  "02_open_an_account_and_store_first_memories.md": {
+    "idea": "Sign up, create an API key, install the client, and add a conversation for a fictional user. Mem0 extracts third-person facts asynchronously; search returns the relevant ones with scores; the dashboard shows each memory with its source; delete_all cleans up.",
+    "example": "Handing a note-taker the transcript of a meeting and getting back three bullet points, not the transcript.",
+    "steps": [
+      "Create the account and key, store the key as a secret, install mem0ai.",
+      "Add a two-message conversation, wait a moment, search it and list everything with get_all.",
+      "Repeat one call with curl, find the memories in the dashboard, then delete_all."
+    ],
+    "takeaway": "Every add and every search carries a user_id filter; without it you search across everyone.",
+    "notebook": "Search for what Asha can eat and notice that the meeting preference does not come back; relevance, not completeness."
+  },
+  "03_how_add_and_search_work.md": {
+    "idea": "Add is context lookup, LLM fact extraction, deduplication and embedding, then entity extraction, written to SQL, a vector store and an entity store; storage is additive until you update, delete or expire. Search fuses semantic, keyword, entity and temporal signals into one score, shaped by filters, top_k, threshold and rerank.",
+    "example": "A librarian who summarises each visit onto index cards, files them by person, and finds them again by meaning, by name, by who is mentioned and by date.",
+    "steps": [
+      "Follow one turn through the four stages of add in diagram D66.",
+      "Learn the scoping identifiers and what each is for.",
+      "Read the four retrieval signals in diagram D67 and one result field by field."
+    ],
+    "takeaway": "New facts do not overwrite old ones; a changed preference lives beside the old one until you update it.",
+    "notebook": "Add the same conversation twice and confirm with get_all that deduplication kept one copy."
+  },
+  "04_wire_memory_into_an_agent.md": {
+    "idea": "One pattern everywhere: search with the latest user message, label the results as background in the system prompt, call the model, then add the turn pair. It is a dozen lines in plain Python, a node in LangGraph with the user id in the state, and two HTTP Request nodes in n8n.",
+    "example": "A doctor reads the patient's file before the consultation and writes a line in it afterwards; the consultation itself is unchanged.",
+    "steps": [
+      "Run the plain-Python reply function across two fresh conversations for one fictional user.",
+      "Read the LangGraph node and see where search and add wrap the model call.",
+      "Place the two REST calls around the n8n AI Agent with a stable user id."
+    ],
+    "takeaway": "Memories go into the prompt as labelled background, never as instructions.",
+    "notebook": "Start a second conversation with an empty history and watch it answer a question only the first conversation could have taught it."
+  },
+  "05_shape_what_is_remembered.md": {
+    "idea": "Custom instructions steer what the extractor keeps, custom categories name your domain, metadata makes facts filterable, expiration retires them on a date, update and delete and history change and explain them, export gets them out, and webhooks or the async client fit memory into event-driven systems.",
+    "example": "Briefing the note-taker: what to write down, what to ignore, how to label it, and when to throw a note away.",
+    "steps": [
+      "Set project custom instructions that include your domain and exclude secrets and small talk.",
+      "Define custom categories and add metadata and an expiration date on a test memory.",
+      "Update one memory, read its history, and run the twenty-conversation tuning routine."
+    ],
+    "takeaway": "Custom instructions are strong influence, not enforcement; keep a code check for secrets before add.",
+    "notebook": "Compare get_all before and after your custom instructions on the same twenty conversations and count noise and misses."
+  },
+  "06_run_mem0_yourself.md": {
+    "idea": "Memory.from_config with Ollama as both model and embedder and a Qdrant store on disk runs the whole layer on a laptop; make bootstrap in the repository's server folder starts a REST API and dashboard with PostgreSQL; and https://mcp.mem0.ai/mcp exposes the same operations to coding assistants as MCP tools.",
+    "example": "The same recipe cooked in your kitchen, in a rented restaurant kitchen, or ordered in.",
+    "steps": [
+      "Pull nomic-embed-text and gemma3:4b, write the config with matching 768 dimensions, add and search locally.",
+      "Clone the repository, set the env file, run make bootstrap, open the dashboard on port 3000.",
+      "Add the MCP server to a coding tool and see the memory tools appear."
+    ],
+    "takeaway": "Embedder dimensions and vector-store dimensions must agree; a mismatch is the usual first error.",
+    "notebook": "Watch the Ollama server load two models in turn during the first add: the embedder and then the extractor."
+  },
+  "07_privacy_evaluation_and_operations.md": {
+    "idea": "Consent, minimisation, isolation, retention, erasure and transparency remain yours. Memory fails quietly through over-remembering, stale facts, leakage, injection through memory and retrieval misses, so score recall and isolation with a small fictional test set on every change, gate adds and cap results.",
+    "example": "A pharmacy's patient records: useful only if they are correct, private and kept no longer than they should be, and nobody notices a wrong entry until it matters.",
+    "steps": [
+      "Map each duty to a Mem0 operation or a check in your code.",
+      "Read the five failure modes and their cures.",
+      "Run the recall-and-isolation evaluation and set it as a release gate."
+    ],
+    "takeaway": "A search without a user filter is a defect, and the isolation test is how you catch it before users do.",
+    "notebook": "Make the evaluation fail on purpose by removing the filter from one search, and watch isolated turn false."
   }
 }

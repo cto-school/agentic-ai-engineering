@@ -1,14 +1,15 @@
 # Agentic AI Engineering Course Portal
 
-An interactive reader for the five-day Agentic AI Engineering curriculum. Students use it alongside the classroom notebooks to read ahead, revise, or catch up.
+An interactive reader for the five-day Agentic AI Engineering curriculum, its two notebook tracks, and five standalone modules. Students use it alongside the classroom notebooks to read ahead, revise, or catch up.
 
 ## What students get
 
-- **Getting started** page: the course map (five days plus the separate LangChain track), how the course works in four lines, a course map of the five days (project and outcome per day), the three steps before Day 1, the API-key guide (the same text that opens the Day 1 notebook), Google Colab configuration, and a progress reset.
-- For every one of the 39 day sections and the 14 LangChain-track sections, three views:
+- **Getting started** page: the course map (five days, the separate LangGraph and LangChain tracks, and the five standalone modules), how the course works in four lines, a course map of the five days (project and outcome per day), the three steps before Day 1, the API-key guide (the same text that opens the Day 1 notebook), Google Colab configuration, and a progress reset.
+- For every one of the 39 day sections, the 14 LangGraph-track sections and the 14 LangChain-track sections, three views:
   - **Learn**: a short plain-language guide (the idea, a picture, three steps, the distinction to keep straight, the common mistake, what to notice when you run it), followed by the section's own explanations from the notebook with the checkpoint answers folded out.
   - **Notebook**: the complete section rendered cell by cell, explanations and code in running order.
   - **System view**: the section's architecture diagrams drawn from the Mermaid sources, with a text alternative.
+- For each of the 34 chapters of the five standalone modules (Ollama, n8n, OpenClaw, LLM Foundation, Mem0), two views: **Learn** (the same beginner guide, then the full chapter with its theory, instructions and commands; the LLM Foundation chapters on tokens and sampling embed two interactive simulations, a trainable byte-pair tokenizer and a next-token predictor with a temperature slider) and **System view**. Modules have no notebook, so no Colab link and no Notebook tab.
 - Sidebar search across titles, guides and explanations; per-section completion tracking stored in the browser; and one Colab link per day (next to the Learn tab and in the sidebar) that opens the complete day notebook. Sections are never opened or downloaded individually, because definitions carry forward within a day.
 
 ## Run locally
@@ -32,4 +33,4 @@ After the repository is published on GitHub, open **Getting started** in the por
 
 ## Content source
 
-Do not edit `app/course-data.ts` or the copied files under `public/notebooks` by hand. Update the original notebooks in the parent course folders (and `content/lesson-guides.json` / `content/common-mistakes.json` for the beginner guides), then run `pnpm content` to refresh everything.
+Do not edit `app/course-data.ts` or the copied files under `public/notebooks` by hand. Update the original notebooks in the parent course folders, or the Markdown chapters under `modules/<module>/chapters/` (and `content/lesson-guides.json` / `content/common-mistakes.json` for the beginner guides, keyed by notebook or chapter file name), then run `pnpm content` to refresh everything. A chapter embeds a simulation with an HTML comment such as `<!-- widget:tokenizer -->`; the widgets themselves live in `app/llm-playground.tsx`.

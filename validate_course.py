@@ -11,7 +11,8 @@ ROOT=Path(__file__).parent
 DAYS=[ROOT/f"day_{n:02d}_{slug}" for n,slug in [
     (1,"model_tools_agent"),(2,"knowledge_and_state"),(3,"memory_and_safety"),
     (4,"multi_agent_systems"),(5,"ai_harness")]]
-TRACKS={ROOT/"langchain_track":"langchain_complete.ipynb"}   # optional tracks beside the five days
+TRACKS={ROOT/"langchain_track":"langchain_complete.ipynb",ROOT/"langgraph_track":"langgraph_complete.ipynb"}   # optional tracks beside the five days
+MODULES=[ROOT/"modules"/name for name in ("ollama","n8n","openclaw","llm_foundation","mem0")]   # standalone Markdown modules (no notebooks)
 
 
 def _tags(cell): return set(cell.get("metadata",{}).get("tags",[]))
@@ -82,6 +83,24 @@ def validate_lesson_notebooks():
     return count
 
 
+def validate_modules():
+    """Each standalone module has a README listing its chapters, and every chapter has a title and a Recap."""
+    chapters=0
+    for module in MODULES:
+        readme=module/"README.md"
+        if not readme.exists(): raise AssertionError(f"Missing module README: {readme.relative_to(ROOT)}")
+        files=sorted(p.name for p in (module/"chapters").glob("*.md"))
+        if not files: raise AssertionError(f"{module.name}: no chapters")
+        listed=[name for name in files if f"`{name}`" in readme.read_text(encoding="utf-8")]
+        if listed!=files: raise AssertionError(f"{module.name}: README does not list every chapter in order")
+        for name in files:
+            text=(module/"chapters"/name).read_text(encoding="utf-8")
+            if not text.startswith("# "): raise AssertionError(f"{module.name}/{name}: must start with a level-one title")
+            if "\n## Recap" not in text: raise AssertionError(f"{module.name}/{name}: missing Recap")
+            chapters+=1
+    return chapters
+
+
 def validate_python():
     files=[]
     for day in DAYS:
@@ -120,7 +139,8 @@ def validate_course_files():
               ROOT/"reference"/"rag_failure_diagnosis.md",ROOT/"exercises"/"README.md",
               ROOT/"diagrams"/"source"/"day_01.md",ROOT/"diagrams"/"source"/"day_02.md",
               ROOT/"diagrams"/"source"/"day_03.md",ROOT/"diagrams"/"source"/"day_04.md",
-              ROOT/"diagrams"/"source"/"day_05.md",ROOT/"diagrams"/"source"/"langchain.md"]
+              ROOT/"diagrams"/"source"/"day_05.md",ROOT/"diagrams"/"source"/"langchain.md",ROOT/"diagrams"/"source"/"langgraph.md",
+              ROOT/"diagrams"/"source"/"ollama.md",ROOT/"diagrams"/"source"/"n8n.md",ROOT/"diagrams"/"source"/"openclaw.md",ROOT/"diagrams"/"source"/"llm_foundation.md",ROOT/"diagrams"/"source"/"mem0.md",ROOT/"modules"/"README.md"]
     required += [day/"theory.md" for day in DAYS]
     required += [directory/"README.md" for directory in TRACKS]
     missing=[str(p.relative_to(ROOT)) for p in required if not p.exists()]
@@ -129,8 +149,8 @@ def validate_course_files():
 
 
 if __name__=="__main__":
-    sections,cells,live=validate_day_notebooks(); track_sections,track_cells=validate_track_notebooks(); lessons=validate_lesson_notebooks(); python_files=validate_python(); (tests,skipped)=run_plain_tests(); docs=validate_course_files()
-    print(f"PASS: 5 day notebooks with {sections} sections and {cells} code cells, {len(TRACKS)} track notebook(s) with {track_sections} sections and {track_cells} code cells, {lessons} derived lesson notebooks, {live} live-observation cells, {python_files} Python files, {tests} executed tests, {docs} key documents")
+    sections,cells,live=validate_day_notebooks(); track_sections,track_cells=validate_track_notebooks(); lessons=validate_lesson_notebooks(); module_chapters=validate_modules(); python_files=validate_python(); (tests,skipped)=run_plain_tests(); docs=validate_course_files()
+    print(f"PASS: 5 day notebooks with {sections} sections and {cells} code cells, {len(TRACKS)} track notebook(s) with {track_sections} sections and {track_cells} code cells, {lessons} derived lesson notebooks, {len(MODULES)} standalone modules with {module_chapters} chapters, {live} live-observation cells, {python_files} Python files, {tests} executed tests, {docs} key documents")
     if skipped:
         print("WARN: install requirements.txt to execute skipped test modules:")
         for item in skipped: print(" -",item)

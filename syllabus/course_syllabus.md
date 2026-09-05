@@ -227,7 +227,16 @@ Students first implement a transparent local mechanism, then inspect a productiz
 
 Only fictional users, synthetic prompts, supplied public course documents, and deliberately created code artifacts may be sent to these hosted platforms.
 
-## Optional LangChain track
+## Optional tracks: LangGraph and LangChain
+
+`langgraph_track/langgraph_complete.ipynb` teaches LangGraph from scratch and stands entirely on its
+own. CampusAI, a university helpdesk assistant, grows across fifteen sections from a three-node graph
+with no model into a production-grade system: state and reducers, the agent loop, structured routing,
+short- and long-term memory, retrieval, permissions and human approval, retries and limits, parallel
+work, MCP tools (local and public), a supervisor and handoffs, streaming, tracing, evaluation, scheduled runs and the assembled system. It has no
+exercises, runs in mock mode without a key, and is not part of the five-day timetable.
+
+### LangChain track
 
 A separate, self-contained notebook (`langchain_track/langchain_complete.ipynb`) teaches the same
 ideas through LangChain 1.x and LangGraph. Students build one agent, OpsPilot, fourteen times:
@@ -236,3 +245,13 @@ conversation and long-term memory, retrieval, planning, middleware and permissio
 human-in-the-loop, an explicit LangGraph workflow, a supervisor with specialists, and streaming
 with tracing. It has no exercises or graded checks, runs in mock mode without a key, and can be
 taken after Day 1 or on its own. It is not part of the five-day timetable.
+
+## Standalone modules
+
+Five Markdown modules under `modules/` are read in the portal or from the folder and contain no
+notebooks: **Ollama** (running Gemma 3 locally on an ordinary laptop, 6 chapters), **n8n**
+(an n8n Cloud account and four agents on the visual canvas, 7 chapters), **OpenClaw** (an AWS
+account and a hardened Ubuntu EC2 machine, then OpenClaw with a Telegram bot and Gemini, 7
+chapters) and **LLM Foundation** (how a language model is built, trained and run, with two
+in-browser simulations, 7 chapters) and **Mem0** (a memory layer for agents: Platform, internals, agent wiring, local and self-hosted deployment, evaluation and privacy, 7 chapters). They are independent of each other and of the days and
+tracks, and are not part of the five-day timetable.

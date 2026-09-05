@@ -49,7 +49,21 @@ Every lesson is a step-by-step build: a short explanation, then a code cell that
 
 Students work in Google Colab. The setup cell at the top of each day notebook looks for a Colab secret named `OPENROUTER_API_KEY` (key icon in Colab's left sidebar), then an environment variable, and otherwise asks once; pressing Enter keeps the notebook in mock mode. Instructors running locally can still put the key in a `.env` file copied from `.env.example`.
 
-## LangChain track (separate from the five days)
+## Separate tracks: LangGraph and LangChain
+
+Two more self-contained Colab notebooks sit outside the day sequence. Each grows one project through
+short iterations; there are no exercises, and both run on a built-in mock chat model without a key.
+
+**LangGraph track** (`langgraph_track/langgraph_complete.ipynb`) teaches LangGraph from scratch and is
+fully self-contained. CampusAI, a university helpdesk assistant, starts as a three-node graph with
+no model in it and gains, one section at a time: a model node and reducers, tools and the agent
+loop, structured output and routing with subgraphs, a checkpointer with context management, a
+store for long-term memory, retrieval by meaning, permissions and human approval (including a
+prompt-injection attack), retries and limits, parallel fan-out with `Send`, tools served over MCP,
+a supervisor with specialists and a handoff, streaming with tracing, evaluation and a taste of
+LangSmith, scheduled unattended runs, and finally one assembled system. See [the track README](langgraph_track/README.md).
+
+**LangChain track** (`langchain_track/langchain_complete.ipynb`) teaches agents with LangChain 1.x on top of LangGraph.
 
 `langchain_track/langchain_complete.ipynb` is one more self-contained Colab notebook that teaches
 the same ideas through **LangChain 1.x** (`create_agent`, tools, middleware, structured output) and
@@ -59,8 +73,32 @@ conversation memory, long-term memory, retrieval, planning, middleware and permi
 human-in-the-loop, an explicit graph, a supervisor with specialists, and streaming with tracing.
 There are no exercises; each section is theory, a sketch, runnable commented code and a recap.
 Without a key the notebook runs on a built-in mock chat model, so every mechanism can be studied for
-free. See [the track README](langchain_track/README.md). The portal lists it as a separate section
-beside the five-day path.
+free. See [the track README](langchain_track/README.md). The portal lists both tracks in a separate
+sidebar group beside the five-day path.
+
+## Standalone modules: Ollama, n8n, OpenClaw, LLM Foundation and Mem0
+
+Five short modules under [`modules/`](modules/README.md) sit beside the days and the tracks and
+are **not notebooks**: each is a sequence of Markdown chapters with theory, architecture diagrams
+(`diagrams/source/ollama.md`, `n8n.md`, `openclaw.md`, `llm_foundation.md`, `mem0.md`) and step-by-step
+instructions, read in the portal's "Standalone modules" group or straight from the folder. None
+of them is part of the five-day timetable and none depends on another.
+
+- **Ollama** (6 chapters): run Gemma 3 on a laptop without a GPU, from the terminal and from
+  programs, with a Modelfile and the OpenAI-compatible endpoint the course's helper can use.
+- **n8n** (7 chapters): open an n8n Cloud account (no installation) and build four agents on the
+  visual canvas: chat with memory, tools, structured-output triage, and a supervisor with
+  specialist workflows.
+- **OpenClaw** (7 chapters): open an AWS account without living as root, launch an Ubuntu EC2
+  machine, log in over SSH and disable root and password access, then install OpenClaw, connect
+  a Telegram bot and run it on a Gemini API key.
+- **LLM Foundation** (7 chapters): how a language model is built, trained and run, from tokens
+  and the Transformer to sampling, pretraining, post-training, inference and limits, with two
+  in-browser simulations in the portal (a trainable BPE tokenizer and a next-token predictor).
+- **Mem0** (7 chapters): a memory layer for agents: the Platform account and first memories, how
+  add and search work inside, the search-then-add pattern in plain Python, LangGraph and n8n,
+  shaping what is remembered, running Mem0 locally with Ollama or as a self-hosted server, and a
+  recall-and-isolation evaluation with privacy and operations duties.
 
 ## Interactive course portal
 
@@ -87,7 +125,7 @@ py split_day_notebooks.py
 py validate_course.py
 ```
 
-The first command derives the lesson notebooks from the five day notebooks and the LangChain track notebook. The older generators (`build_master_notebooks.py`, `build_student_learning_materials.py`, the per-day `build_notebooks.py`, `enrich_day1_day2_notebooks.py`) worked in the opposite direction and are archived: they refuse to run without `--force`. The validator checks notebook JSON and code-cell syntax, compiles reference Python,
+The first command derives the lesson notebooks from the five day notebooks and the two track notebooks. The older generators (`build_master_notebooks.py`, `build_student_learning_materials.py`, the per-day `build_notebooks.py`, `enrich_day1_day2_notebooks.py`) worked in the opposite direction and are archived: they refuse to run without `--force`. The validator checks notebook JSON and code-cell syntax, compiles reference Python,
 runs dependency-compatible offline tests, and confirms key teaching documents. It
 reports tests skipped because a staged dependency is not installed.
 

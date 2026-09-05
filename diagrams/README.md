@@ -43,7 +43,14 @@ be regenerated from source rather than edited manually.
 - [Day 2 diagrams](source/day_02.md) — D06–D07
 - [Day 3 diagrams](source/day_03.md) — D08–D11
 - [Day 4 diagrams](source/day_04.md) — D12–D15
-- [Day 5 diagrams](source/day_05.md) — D16–D18
+- [Day 5 diagrams](source/day_05.md) — D16–D19
+- [LangChain track diagrams](source/langchain.md) — D20–D30
+- [LangGraph track diagrams](source/langgraph.md) — D31–D45
+- [Ollama module diagrams](source/ollama.md) — D50–D52
+- [n8n module diagrams](source/n8n.md) — D53–D56
+- [OpenClaw module diagrams](source/openclaw.md) — D57–D59
+- [LLM Foundation module diagrams](source/llm_foundation.md) — D60–D64
+- [Mem0 module diagrams](source/mem0.md) — D65–D69
 
 ## Diagram rules
 
