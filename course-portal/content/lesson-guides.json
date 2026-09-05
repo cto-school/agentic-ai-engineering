@@ -591,7 +591,13 @@
       "Build keyword triage for handbook questions as a real workflow with no AI in it."
     ],
     "takeaway": "In a workflow your code chooses the edges; in an agent a model chooses some of them. The graph shape is the same.",
-    "notebook": "Watch the printed trace grow through the pipeline, and see the keyword workflow miss a question phrased in new words."
+    "notebook": "Watch the printed trace grow through the pipeline, and see the keyword workflow miss a question phrased in new words.",
+    "mechanism": [
+      "You hand LangGraph a state dictionary and a set of named Python functions, the nodes.",
+      "Edges say which node runs after which. A conditional edge calls one of your functions, which looks at the state and returns the name of the next node.",
+      "Each node receives the whole state and returns only the keys it changed. LangGraph merges that update into the state and follows the next edge.",
+      "The run ends when an edge reaches END. An edge that points backwards repeats a node until the routing function says stop."
+    ]
   },
   "02_model_as_a_node.ipynb": {
     "idea": "A model is text in, text out, with no memory; it sees only the context you send. In a graph a model call is just a node that reads the conversation from state and returns the reply. The messages key uses the add_messages reducer so replies append rather than replace.",
@@ -602,7 +608,13 @@
       "Invoke twice and watch the second run forget the first; pass the history by hand to see why."
     ],
     "takeaway": "The message list is the model's entire memory and its entire world; reducers decide how the graph accumulates it.",
-    "notebook": "The reducer demo prints ['B'] versus ['start', 'A', 'B']; run 3 knows the name only because you passed earlier messages in."
+    "notebook": "The reducer demo prints ['B'] versus ['start', 'A', 'B']; run 3 knows the name only because you passed earlier messages in.",
+    "mechanism": [
+      "The state holds a list of messages. A reducer, add_messages, tells LangGraph to append each update to that list instead of replacing it.",
+      "The chatbot node builds one request, a system prompt followed by every message in the state, and sends it to the model.",
+      "The model returns one AIMessage. The node returns it as an update and the reducer appends it to the list.",
+      "Nothing survives outside the state. A new invoke starts with a fresh list, so the model has no memory of the previous run unless you pass the old messages in."
+    ]
   },
   "03_tools_and_the_agent_loop.ipynb": {
     "idea": "Tools are functions the model may request but never execute. The agent loop is one conditional edge pointing backwards: the agent node asks the model, the tools node runs any requests, and control returns until the model answers. Good tools have precise descriptions, validated arguments and errors returned as data.",
@@ -613,7 +625,13 @@
       "Compare a vaguely described tool with a precise one, add a Pydantic args_schema, and return errors as values."
     ],
     "takeaway": "The model emits a request; your node executes it. That boundary is where every later safety feature lives, and the docstring is the interface.",
-    "notebook": "The trajectory shows requests, results and the answer; the vague tool goes unused; the bad id never reaches the data."
+    "notebook": "The trajectory shows requests, results and the answer; the vague tool goes unused; the bad id never reaches the data.",
+    "mechanism": [
+      "The @tool decorator turns a function into a name, a description and an argument schema. bind_tools sends those three to the model with every request.",
+      "The agent node asks the model. The reply is either text or a list of tool calls (name plus arguments). The model never executes anything.",
+      "The routing function reads the last message: tool calls present means go to the tools node, otherwise END.",
+      "The tools node runs each requested function and returns the results as ToolMessages. The edge leads back to the agent node, which now answers with those results in its context."
+    ]
   },
   "04_structured_output_and_routing.ipynb": {
     "idea": "with_structured_output makes the model fill in a Pydantic schema instead of writing prose, so the result is validated before your code sees it. A triage node stores the ticket fields in state and a conditional edge routes on the category. The records desk is the whole agent graph reused as one node, a subgraph.",
@@ -624,7 +642,13 @@
       "Wire the conditional edge inside build_desks() and run three different questions."
     ],
     "takeaway": "Use the agent loop only where judgement helps; route everything else through fixed nodes, on decisions your code can validate.",
-    "notebook": "Three tickets come back as objects with a category and priority; three questions take three paths."
+    "notebook": "Three tickets come back as objects with a category and priority; three questions take three paths.",
+    "mechanism": [
+      "with_structured_output makes the Pydantic schema the only allowed reply shape. The model fills in the fields and Pydantic validates them before your code sees the object.",
+      "The triage node stores the validated category in the state. A conditional edge reads it and picks the desk.",
+      "The faq desk is a fixed node (search, then answer once). The records desk is a whole compiled agent graph mounted as one node; both graphs share the messages key.",
+      "Whichever desk runs appends its answer to messages, and the run reaches END."
+    ]
   },
   "05_short_term_memory_and_context.ipynb": {
     "idea": "A checkpointer saves the whole state after every node under a thread id, so the same thread continues the conversation, a crashed run can resume where it died, and a paused run can wait for a human. Because threads grow, a context-management node summarises old turns and deletes them with RemoveMessage.",
@@ -635,7 +659,13 @@
       "Add manage_context with RemoveMessage plus a summary in state, and watch a long thread stay short."
     ],
     "takeaway": "Persistence is more than chat memory, and memory without context management just makes every call slower and costlier.",
-    "notebook": "Turn 2 answers from turn 1; the other thread knows nothing; the long thread holds a handful of messages plus a summary."
+    "notebook": "Turn 2 answers from turn 1; the other thread knows nothing; the long thread holds a handful of messages plus a summary.",
+    "mechanism": [
+      "With a checkpointer compiled in, LangGraph saves the full state after every node under the thread_id given in the run config.",
+      "A new invoke on the same thread loads that saved state first, so the new user message lands after the earlier ones.",
+      "get_state reads the latest checkpoint; get_state_history lists every checkpoint, newest first.",
+      "The manage_context node runs first on every turn. When the list is long it asks the model for a summary, keeps it in the state, and returns RemoveMessage updates that the reducer applies as deletions."
+    ]
   },
   "06_long_term_memory.ipynb": {
     "idea": "A store holds facts about a person across conversations, keyed by namespace. The application passes the user's identity as runtime context that the model cannot forge; a profile-loading node reads the store into state, the agent puts the facts in its prompt, and a remember tool writes new facts back.",
@@ -646,7 +676,13 @@
       "Remember in one thread, recall in another, and confirm another user sees nothing."
     ],
     "takeaway": "State, short-term memory, long-term memory and knowledge are four different things; keep them separate.",
-    "notebook": "The store contents printed at the end are keyed by ('profiles', user_id), not by thread."
+    "notebook": "The store contents printed at the end are keyed by ('profiles', user_id), not by thread.",
+    "mechanism": [
+      "The application passes a Context object (user id, role) into invoke. Nodes and tools read it from the runtime, so the model can never invent an identity.",
+      "A store compiled into the graph holds values under a namespace such as (profiles, user_id).",
+      "load_profile runs first: it reads that namespace and copies the facts into the state, and the agent node writes them into the system prompt.",
+      "The remember tool writes a new fact back under the same namespace, so the next thread for the same user loads it too."
+    ]
   },
   "07_knowledge_and_retrieval.ipynb": {
     "idea": "Keyword search cannot find text that means the same thing in other words. An embedding model turns chunks into vectors; cosine similarity finds the nearest ones to a question; the model answers only from those excerpts. The same retrieve function serves a fixed faq node and a search tool the agent can call.",
@@ -657,7 +693,13 @@
       "Wrap retrieve as search_knowledge and let the records agent decide when to call it."
     ],
     "takeaway": "2-step RAG is predictable and cheap; agentic RAG is for questions that need several lookups or reasoning in between; grounding is an instruction plus cited sources.",
-    "notebook": "The library note is found for a question that shares no words with it; the agent combines a record with a policy excerpt."
+    "notebook": "The library note is found for a question that shares no words with it; the agent combines a record with a policy excerpt.",
+    "mechanism": [
+      "Every document chunk is passed through an embedding model once and stored as a unit vector in an index (a numpy matrix).",
+      "A question is embedded the same way. Its dot product with the index gives one similarity score per chunk, and the top k chunks are the excerpts.",
+      "The faq node puts the excerpts into the system prompt with a grounding instruction and asks the model once.",
+      "The records agent gets the same retrieval as a tool, so it decides when a lookup is needed and can search more than once in a run."
+    ]
   },
   "08_approval_permissions_and_injection.ipynb": {
     "idea": "Write tools need three architectural defences: the caller's role decides which tools the model sees, a guard node re-checks the role before any write, and an approval node pauses with interrupt() until a human resumes with Command. A document containing an instruction shows why the defences must sit at the tool boundary, not in the prompt.",
@@ -668,7 +710,13 @@
       "Approve, reject, use interrupt_before, then poison the knowledge index and run the attack as student and as staff."
     ],
     "takeaway": "Prompting is not authorisation. Anything the model reads can try to steer it; only the graph can stop it.",
-    "notebook": "Staff writes pause for approval, student writes are blocked, and the injected instruction adds nothing to REGISTRATIONS."
+    "notebook": "Staff writes pause for approval, student writes are blocked, and the injected instruction adds nothing to REGISTRATIONS.",
+    "mechanism": [
+      "The agent node reads the caller's role from the runtime context and binds only the tools that role allows. The model cannot request what it cannot see.",
+      "A routing function separates read requests (straight to the tools node) from write requests (to the guard node).",
+      "The guard re-checks the role and answers blocked calls with rejection ToolMessages. The approval node calls interrupt(), which saves a checkpoint and stops the run.",
+      "Command(resume=True) re-enters the approval node with the human's answer and continues to the tools node. False returns rejections instead, so the write never happens."
+    ]
   },
   "09_reliability_and_limits.ipynb": {
     "idea": "Real tools fail and real models loop. A RetryPolicy on the tools node retries transient errors (name them with retry_on), ToolNode with handle_tool_errors=True turns remaining errors into messages the model can read, and recursion_limit on a run stops any graph that never reaches a stop condition.",
@@ -679,7 +727,12 @@
       "Build a graph that loops forever and stop it with recursion_limit; pass the same limit to an agent run."
     ],
     "takeaway": "Retry reads freely; never blindly retry a write. Bound every loop.",
-    "notebook": "The flaky tool succeeds on attempt 2; the endless graph stops at step 6 with GraphRecursionError."
+    "notebook": "The flaky tool succeeds on attempt 2; the endless graph stops at step 6 with GraphRecursionError.",
+    "mechanism": [
+      "A RetryPolicy on the tools node makes LangGraph run that node again when a tool raises an exception matched by retry_on, waiting a little between attempts.",
+      "When the attempts run out, ToolNode(handle_tool_errors=True) converts the exception into an error ToolMessage that the model reads on the next loop.",
+      "Every node execution counts as one step. recursion_limit in the run config caps the steps and raises GraphRecursionError when the cap is reached."
+    ]
   },
   "10_parallel_work.ipynb": {
     "idea": "Independent checks should not wait for each other. Several edges from one node run branches at the same time, a reducer (operator.add) merges their writes to the shared key, and a fan-in node waits for all of them. Send creates such branches at run time, one per item.",
@@ -690,7 +743,13 @@
       "Use Send to spawn one worker per course code in the question."
     ],
     "takeaway": "Any key written by parallel nodes needs a reducer; without one LangGraph refuses to guess.",
-    "notebook": "Three findings merge into one verdict; three courses are checked by three concurrent workers."
+    "notebook": "Three findings merge into one verdict; three courses are checked by three concurrent workers.",
+    "mechanism": [
+      "Several edges leaving one node tell LangGraph to run those nodes in the same step, concurrently.",
+      "Each branch returns an update to the same key. The operator.add reducer concatenates them instead of letting one overwrite the other.",
+      "A node that has edges from every branch waits until all of them have finished, then runs once: the fan-in.",
+      "Send objects returned from a routing function create one branch per item at run time, each with its own input state."
+    ]
   },
   "11_mcp_tools_from_servers.ipynb": {
     "idea": "MCP is the open standard for exposing tools from a server so any agent can use them. A FastMCP server written in a few lines runs as a separate process; MultiServerMCPClient lists its tools as ordinary tool objects that go into the same ToolNode as local functions. MCP tools are async, so the graph runs with ainvoke.",
@@ -702,7 +761,13 @@
       "Connect to a public MCP server (DeepWiki) with a timeout and ask it about the LangGraph repository."
     ],
     "takeaway": "A server is code you run on the model's behalf: read what it exposes, and keep the guard and approval layers in front of its write tools.",
-    "notebook": "The model calls two tools that exist only in the server file; their results come back through the same tools node."
+    "notebook": "The model calls two tools that exist only in the server file; their results come back through the same tools node.",
+    "mechanism": [
+      "An MCP server is a separate process that lists its tools (name, description, schema) and executes them on request over a transport such as HTTP.",
+      "MultiServerMCPClient asks each server for its tools and wraps them as tool objects with the same interface as the local ones.",
+      "When the tools node calls a remote tool, the arguments travel to the server and the result comes back as content blocks, which become a ToolMessage.",
+      "Those calls are asynchronous, so the graph runs with ainvoke. A timeout and handle_tool_errors keep an unreachable server from crashing the run."
+    ]
   },
   "12_multi_agent_supervisor.ipynb": {
     "idea": "A supervisor node makes a structured choice of the next specialist and routes with Command(goto=...); each specialist is a compiled agent subgraph behind a named worker node that reports back. Multi-agent is a boundary decision (tools, prompts, permissions, owners) and costs more model calls. A handoff is the other pattern: the active agent transfers the conversation itself, with no supervisor.",
@@ -714,7 +779,13 @@
       "Build the handoff variant: a transfer tool turned into Command(goto=...) so the active agent changes."
     ],
     "takeaway": "Split into agents only at a real boundary; measure the cost before you do.",
-    "notebook": "The supervisor prints its three decisions; the single agent answers the same question with fewer model calls."
+    "notebook": "The supervisor prints its three decisions; the single agent answers the same question with fewer model calls.",
+    "mechanism": [
+      "The supervisor node asks the model for a structured decision naming the next worker or FINISH, and returns Command(goto=...) to route there.",
+      "A worker node runs a compiled specialist graph on the user's question and appends its report to the state as a named AIMessage.",
+      "Edges from every worker lead back to the supervisor, which decides again with the reports in its context, until FINISH sends the run to the final node.",
+      "In the handoff variant there is no supervisor: an agent node turns a transfer tool call into Command(goto=other_agent), and the other agent continues with the full history."
+    ]
   },
   "13_streaming_tracing_and_evaluation.ipynb": {
     "idea": "stream() shows progress node by node or token by token; the same updates stream recorded with timings and token counts is a trace; an evaluation set states the expected desk and tools for each question and a harness turns runs into a pass rate with latency and cost.",
@@ -726,7 +797,12 @@
       "Optionally trace one run in LangSmith with two environment variables and open its URL."
     ],
     "takeaway": "'It worked when I tried it' is not an evaluation; judge trajectories, not just answers, and keep the cases in version control.",
-    "notebook": "Nodes appear as they finish; the trace lists each step; five cases produce a pass rate with average latency and model calls."
+    "notebook": "Nodes appear as they finish; the trace lists each step; five cases produce a pass rate with average latency and model calls.",
+    "mechanism": [
+      "stream(stream_mode='updates') yields each node's returned update the moment the node finishes; stream_mode='messages' yields model tokens tagged with the producing node.",
+      "Recording those updates with timestamps and usage_metadata is a trace of the run. LangSmith uploads the same events automatically once tracing is switched on.",
+      "The evaluation harness invokes the graph for each case, compares the desk chosen and the tools called with the expected ones, and reports a pass rate with latency and model calls."
+    ]
   },
   "15_the_full_system.ipynb": {
     "idea": "Every earlier layer in one graph: profile loading, context management, structured triage, a grounded faq desk, an approval-gated records agent with retries and local plus MCP tools, a parallel eligibility desk, small talk, a checkpointer for threads and a store for people. This is the shape production agent systems converge on.",
@@ -737,7 +813,13 @@
       "Run a five-turn staff conversation with ainvoke, approve the pause, and print the audit trail and the stored profile."
     ],
     "takeaway": "Ask first whether the problem needs an agent at all; if the steps are known, a workflow is cheaper, faster and safer. Use the loop where judgement helps, and gate its writes.",
-    "notebook": "Five turns cross every desk, one pauses for approval, and the state history lists every node that ran."
+    "notebook": "Five turns cross every desk, one pauses for approval, and the state history lists every node that ran.",
+    "mechanism": [
+      "Every turn enters at load_profile (store to state) and manage_context (summary plus RemoveMessage), then triage picks a desk from a structured decision.",
+      "The faq desk retrieves and answers once; the eligibility desk runs the parallel checks; the records desk is the safe agent subgraph with role filtering, guard, approval, retries and local plus MCP tools.",
+      "The checkpointer saves after every node of every desk on the same thread, and the store keeps the user's profile across threads.",
+      "MCP tools are async, so the whole system runs with ainvoke. An interrupt raised inside the records desk surfaces in the outer result and is resumed on the same thread."
+    ]
   },
   "14_scheduled_runs.ipynb": {
     "idea": "Assistants also run on a schedule with nobody typing or watching. A tick is a synthetic input on its own thread; unattended runs may read freely but queue their writes behind an interrupt that waits in the checkpoint for a later review; and a ledger of processed tick ids makes a duplicate trigger a no-op.",
@@ -748,7 +830,13 @@
       "Find the threads waiting for approval, approve one with Command(resume=True), and confirm the other stays queued."
     ],
     "takeaway": "Scheduled agents need three things a chat agent does not: a synthetic trigger, queued approvals, and idempotent ticks.",
-    "notebook": "Two ticks run, the duplicate is skipped, no email leaves until a person approves, and one thread is still waiting at the end."
+    "notebook": "Two ticks run, the duplicate is skipped, no email leaves until a person approves, and one thread is still waiting at the end.",
+    "mechanism": [
+      "A scheduler calls on_tick with a tick id. The id is checked against a ledger first, so a duplicate trigger returns without doing anything.",
+      "The watcher graph runs on a thread named after the tick: a deterministic node finds at-risk students and a model node drafts the emails.",
+      "The approval node calls interrupt(). The run stops and the drafts wait in the checkpoint; nobody resumes them at tick time.",
+      "Later, a staff member lists the threads whose next node is approval and resumes one with Command(resume=True), which runs the send node."
+    ]
   },
   "01_what_ollama_is.md": {
     "idea": "Ollama runs open-weights models on your own computer and serves them at localhost:11434. A model on disk is weights, a tokenizer and a chat template in one file, shrunk by 4-bit quantisation so it fits a laptop.",

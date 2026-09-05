@@ -149,6 +149,12 @@ const modules = [
     spine: [['Concepts', 1], ['Account', 2], ['Add + search', 3], ['Agent', 4], ['Shaping', 5], ['Self-host', 6], ['Operate', 7]] },
 ];
 
+// The page header shows only the first sentence of the idea; the Learn tab shows the whole paragraph.
+function firstSentence(text) {
+  const match = text.match(/^(.+?[.!?])(?:\s|$)/);
+  return match ? match[1] : text;
+}
+
 function plainTitle(source, fallback) {
   const match = source.match(/^#\s+(.+)$/m);
   return match ? match[1].replace(/[*`]/g, '').trim() : fallback;
@@ -246,9 +252,11 @@ function moduleUnit(module) {
         path: `${module.dir}/chapters/${file}`,
         publicPath: '',
         title: plainTitle(source, file.replace('.md', '').replaceAll('_', ' ')),
-        description: guide.idea,
-        guide: { ...guide, mistake },
+        description: firstSentence(guide.idea),
+        guide: { ...guide, mechanism: guide.mechanism || null, mistake },
         reading,
+        closing: '',
+        problem: '',
         segments,
         cells: [],
         diagrams: lessonDiagrams,
@@ -303,6 +311,10 @@ const data = units.map((day, dayIndex) => {
       const readable = markdownCells.map((cell) => cell.source).join('\n\n');
       // The section's own explanations without the code: every markdown cell, minus the H1 the page already shows.
       const reading = markdownCells.map((cell) => cell.source).join('\n\n').replace(/^#\s+.+\r?\n/m, '').trim();
+      // The section's closing cell (Recap, or Checkpoint + Recap on the days) and the problem line that opens its recap.
+      const closingCell = [...markdownCells].reverse().find((cell) => /^###\s+(Checkpoint|Recap)/m.test(cell.source));
+      const closing = closingCell ? closingCell.source.trim() : '';
+      const problem = closing.match(/\*\*(?:Problem seen|Limitation seen):\*\*\s*(.+)/)?.[1]?.trim() || '';
       const setupCell = markdownCells.find((cell) => /^##\s+Your API key/m.test(cell.source));
       if (setupCell && !setupGuide) setupGuide = setupCell.source.trim();
       const codeCells = cells.filter((cell) => cell.type === 'code').length;
@@ -320,9 +332,11 @@ const data = units.map((day, dayIndex) => {
         path: `${day.dir}/notebooks/${file}`,
         publicPath: `/notebooks/${day.dir}/${file}`,
         title: plainTitle(readable, file.replace('.ipynb', '').replaceAll('_', ' ')),
-        description: guide.idea,
-        guide: { ...guide, mistake },
+        description: firstSentence(guide.idea),
+        guide: { ...guide, mechanism: guide.mechanism || null, mistake },
         reading,
+        closing,
+        problem,
         segments: [{ type: 'markdown', source: reading }],
         cells: cells.map(({ id, type, source }) => ({ id, type, source })),
         diagrams: lessonDiagrams,

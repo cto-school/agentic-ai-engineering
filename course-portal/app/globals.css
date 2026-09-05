@@ -119,6 +119,10 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .day-story li.reached { color: var(--ink); }
 .day-story li.reached span { background: var(--signal); }
 .lesson-bridge { border-bottom: 1px solid var(--line); padding-bottom: 1.3rem; }
+.lesson-problem { max-width: 72ch; border-left: .25rem solid var(--teal); border-radius: 0 .75rem .75rem 0; background: #e6f3f1; padding: .9rem 1.1rem; }
+.lesson-problem > p:last-child { color: var(--ink); font-weight: 620; line-height: 1.6; }
+.guide-steps.mechanism li { align-items: start; background: #f7faf9; }
+.guide-steps.mechanism span { background: var(--teal); }
 
 @media (max-width: 760px) { .lesson-toolbar { align-items: stretch; flex-direction: column; } .lesson-actions a { flex: 1; } .top-lesson-nav { width: 100%; margin-top: .35rem; margin-left: 0; justify-content: space-between; } .day-story { grid-template-columns: 1fr; } }
 @media (max-width: 640px) { .lesson-prose { font-size: .98rem; } .lesson-pagination { grid-template-columns: 1fr; } .lesson-pagination > div:last-child { justify-content: flex-start; } }

@@ -123,13 +123,23 @@ function LessonGuide({ day, lesson, previousTitle }: { day: CourseDay; lesson: N
   return <div className="lesson-guide">
     {lesson.order === 1 && <DayStory day={day} lessonOrder={lesson.order} />}
     <section className="lesson-bridge"><p className="eyebrow">Where you are</p><p>{previousTitle ? <>This section builds on <strong>{shortTitle(previousTitle)}</strong>. If that idea is still fuzzy, revisit it first.</> : day.prerequisite}</p></section>
+    {lesson.problem && <section className="lesson-problem"><p className="eyebrow">Why this section exists</p><p>{lesson.problem}</p></section>}
     <section><h2>The idea</h2><p>{guide.idea}</p></section>
-    <section><h2>Picture it</h2><p>{guide.example}</p></section>
-    <section><h2>What happens, step by step</h2><ol className="guide-steps">{guide.steps.map((step, index) => <li key={step}><span>{index + 1}</span><p>{step}</p></li>)}</ol></section>
+    <section><h2>An analogy</h2><p>{guide.example}</p></section>
+    <section><h2>How it works</h2><p className="section-hint">{isModule ? 'The mechanism behind the analogy, in plain words.' : 'The mechanism behind the analogy: what the graph, the model and your code actually do. The System view tab draws the same flow.'}</p>
+      {guide.mechanism
+        ? <ol className="guide-steps mechanism">{guide.mechanism.map((step, index) => <li key={step}><span>{index + 1}</span><p>{step}</p></li>)}</ol>
+        : lesson.diagrams[0]?.textAlternative
+          ? <p>{lesson.diagrams[0].textAlternative}</p>
+          : <p>{guide.takeaway}</p>}
+    </section>
+    <section><h2>{isModule ? 'What you will do in the chapter' : 'What you will do in the notebook'}</h2><p className="section-hint">{isModule ? 'The chapter’s steps, in order.' : 'Open the Notebook tab, or the notebook in Colab, and run these in order.'}</p><ol className="guide-steps">{guide.steps.map((step, index) => <li key={step}><span>{index + 1}</span><p>{step}</p></li>)}</ol></section>
     <aside className="guide-takeaway"><p className="eyebrow">Keep this straight</p><p>{guide.takeaway}</p></aside>
     <aside className="guide-mistake"><p className="eyebrow">Common mistake</p><p>{guide.mistake}</p></aside>
     <section><h2>{isModule ? 'What to check as you go' : 'What to notice when you run it'}</h2><p>{guide.notebook}</p>{lesson.hasLiveObservation && <p className="live-note">This section holds the day&apos;s one <strong>live observation</strong>: with an API key, compare the real model&apos;s reply with the mock. Without a key, read the expected behaviour and move on.</p>}{lesson.isExercise && <p className="live-note">This is the day&apos;s <strong>hands-on exercise</strong>: try the stub, run the check, then read the commented reference solution. The rest of the day uses that solution.</p>}</section>
-    <section className="section-reading"><h2>{isModule ? 'Read the chapter' : 'Read the section'}</h2><p className="section-hint">{isModule ? 'The full chapter: theory, step-by-step instructions and commands. Its diagrams are drawn in System view.' : 'The notebook’s own explanations, without the code. Checkpoint answers fold out.'}</p>{lesson.segments.map((segment, index) => segment.type === 'widget' ? <LessonWidget key={`${lesson.id}-${index}`} id={segment.source} /> : <Markdown key={`${lesson.id}-${index}`} source={segment.source} />)}</section>
+    {isModule
+      ? <section className="section-reading"><h2>Read the chapter</h2><p className="section-hint">The full chapter: theory, step-by-step instructions and commands. Its diagrams are drawn in System view.</p>{lesson.segments.map((segment, index) => segment.type === 'widget' ? <LessonWidget key={`${lesson.id}-${index}`} id={segment.source} /> : <Markdown key={`${lesson.id}-${index}`} source={segment.source} />)}</section>
+      : lesson.closing && <section className="section-reading"><h2>{/Checkpoint/.test(lesson.closing) ? 'Checkpoint and recap' : 'Recap'}</h2><p className="section-hint">{/Checkpoint/.test(lesson.closing) ? 'Try each question before opening its answer. The recap names the problem, the layer that solved it, and the evidence you saw.' : 'The problem this section solved, the layer it added, and the evidence you saw when you ran it. The full text and code live in the Notebook tab.'}</p><Markdown source={lesson.closing} /></section>}
   </div>;
 }
 
